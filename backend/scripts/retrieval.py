@@ -9,10 +9,11 @@ collection = client.get_collection("Study_materials")
 
 #Basic retrieval didnt work so switched to HyDE- Hypothetical Document Embeddings. 
 # Hyde failed, which is why im now working on getting the basic RAG fixed
+# used reranking, with a combo of bi encoder - which is quite fast but not precise and a cross encoder - which is slow, thats why im using it only on top 20. The bi encoder is used while saving data into the vector database, the cross encoder has been added explicitly later.
 
 
 def retrieval(query = "What are the features of Cloud Computing"):
-    result = collection.query(query_texts=query, n_results=20)
+    result = collection.query(query_texts=[query], n_results=20)
     chunks = result["documents"][0]
 
     # rerank them
@@ -20,6 +21,6 @@ def retrieval(query = "What are the features of Cloud Computing"):
     ranked = sorted(zip(scores, chunks), reverse=True)
     top_chunks = [chunk for _, chunk in ranked[:3]]
 
-    print(top_chunks)
+    return top_chunks
 
-retrieval()
+# retrieval()
