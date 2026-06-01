@@ -24,5 +24,3 @@ def clarifier(query = "What are the features of Cloud Computing"):
     response = requests.post(url, headers=headers, data=json.dumps(payload))
 
     return response.json()["choices"][0]["message"]["content"]
-
-print(clarifier())
