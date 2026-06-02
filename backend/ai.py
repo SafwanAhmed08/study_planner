@@ -4,23 +4,59 @@ from scripts.retrieval import retrieval
 
 url = "http://localhost:1234/v1/chat/completions"
 
-def clarifier(query = "What are the features of Cloud Computing"):
+def clarifier(query):
     context_chunks = retrieval(query)
     context = "\n\n".join(context_chunks)
+    #role: system - sets the guardrails and behavior for AI. role: user - explains the users prompt. 
     payload = {
         "messages": [
             {"role": "system", "content": "You are a doubt clarifier for a student preapring for masters in AI at the university of Edinburgh. The course starts in september and they have uploaded the courses they are currently revising or planning to revise. You need to answer their queries to help them study and these must be must be strictly relevant to the topic. You cannot treat this as a generic chat. In case the course material lacks some important information or they ask you something not in the course you can answer but clarify that this is out of course."},
             {"role": "user", "content": f"Context:\n{context}\n\n Question: {query}"}
         ],
-        "temperature": 0.2,
-        "max_tokens": -1,
-        "stream": False
+        "temperature": 0.2,     # controls randomness of the model - 0.2 forces it to be determenistic and factual
+        "max_tokens": -1,       #max_tokens - doesnt cap the answer length
+        "stream": False         #tells server to wait until the final answer is ready
     }
 
     headers = {
         "Content-Type": "application/json"
     }
 
-    response = requests.post(url, headers=headers, data=json.dumps(payload))
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+    except:
+        raise Exception("LM Studio is not running. Please open LM Studio and load the model.")
+
 
     return response.json()["choices"][0]["message"]["content"]
+
+def generate_quiz(topic,num_questions):
+    content_chunks = retrieval(topic)
+    context = "\n\n".join(content_chunks)
+    payload = {
+        "messages":[
+            {
+                "role":"system","content":'You are a quiz generator. You need to generate quizzes for a student who is trying to study in order to prrapre for the Masters of AI at the University of Edinburgh. You cannot treat this as a generic chat. Make sure the quiz is generated only in a JSON array and no other text. Output format - {"question":"...", "options":["A","B","C","D"], "answer": "...", "explanation":"..."}. Use only the retrieved data and not your pretrained knowledge. Make sure you dont just duplicate questions and ask relevant, diverse questions. Do not invent facts. Make questions conceptually challenging, do not keep irrelevant questions. each question must have exactly 4 options and only one must be correct. Provide a concise but clear explanation for each correct answer. Do not include markdown, code fences, comments or extra text. return only a VALID JSON array'
+            },
+            {
+                "role":"user","content":f"Quiz questions about: {topic} Context: {context} \n\n Generate: {num_questions} MCQs \n\n "
+            }
+        ],
+        "temperature":0.1,
+        "stream":False
+    }
+
+    headers = {
+        "Content-Type" : "application/json"
+    }
+
+    try:
+        response = requests.post(url, headers=headers, data = json.dumps(payload))
+        data = response.json()
+        raw = data["choices"][0]["message"]["content"]
+        raw = raw.strip().removeprefix("```json").removesuffix("```").strip()
+        return json.loads(raw)
+    
+    except:
+        raise Exception("LM Studio is not running. Please open LM Studio and load the model.")
+

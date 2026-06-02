@@ -44,6 +44,7 @@ def already_ingested(file_hash):
     return len(results["ids"])>0
 
 def ingest(path):
+    path = Path(path)
     file_hash = get_hash(path)
 
     if already_ingested(file_hash):
