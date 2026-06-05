@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from pydantic import BaseModel  # used to ensure the data srnt by frontend is in the right shape
-from ai import clarifier, generate_quiz
+from ai import clarifier, generate_quiz, generate_flashcards
 import shutil
 from scripts.ingestion import ingest
 from pathlib import Path
@@ -57,3 +57,15 @@ def quiz(request: QuizRequest):
         
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
+    
+class FlashRequest(BaseModel):
+    topic : str
+    num: int = 5
+    
+@app.post("/flashcards")
+def flashcards(request:FlashRequest):
+    try:
+        result = generate_flashcards(request.topic,request.num)
+        return {"flashcards":result}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail = str(e))

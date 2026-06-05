@@ -61,11 +61,32 @@ def generate_quiz(topic,num_questions):
         print(e)
         raise Exception("LM Studio is not running. Please open LM Studio and load the model.")
 
-def geberate_flashcards(topic,num):
+def generate_flashcards(topic,num):
     content_chunks = retrieval(topic)
     context = "\n\n".join(content_chunks)
     payload = {
         "messages":[
-            "role":"system","content":' You are a flashcard generator for a student preparing to do masters in the university of edinburgh. You need to generate complex flashcards which are suitable for a student preparing to study at this level. The flashcards need to be strictly in a JSON array with no other text-{"front": "Question", "Rear":"Answer"}, where the question and answer are generated based on the topic " Do not Hallucinate, do not give wrong answers, the answer should be short and concise with a clear answer. Return only a VALID JSON array.'
-        ]
+            {
+                "role":"system","content":' You are a flashcard generator for a student preparing to do masters in the university of edinburgh. You need to generate complex flashcards in which the answers should be concise (1-3 sentences maximum) while still containing the key concept. they suitable for a student preparing to study at this level. The flashcards need to be strictly in a JSON array with no other text-{"front": "Question", "back":"Answer"}, where the question and answer are generated based on the topic " Do not Hallucinate, do not give wrong answers, the answer should be short and concise with a clear answer. Use only the provided content. Return only a VALID JSON array. Generate a mix of: definition cards, conceptual understanding cards, comparison cards and application/scenario cards. Avoid generating multiple flashcards that test the same concept unless they test clearly different angles.'
+            },
+            {
+                "role":"user","content":f"For this context {context}, create {num} flash cards about {topic}"
+            }
+        ],
+        "temperature" : 0.1,
+        "stream" : False
     }
+    headers = {
+        "content-type":"application/json"
+    }
+
+    try:
+        response = requests.post(url,headers = headers, data = json.dumps(payload))
+        data = response.json()
+        raw = data["choices"][0]["message"]["content"]
+        raw = raw.strip().removeprefix("```json").removesuffix("```").strip()
+        return json.loads(raw)
+    
+    except Exception as e:
+        print(e)
+        raise Exception("LM Studio is not running. Please open LM Studio and load the model.")
