@@ -1,12 +1,17 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel  # used to ensure the data srnt by frontend is in the right shape
 from ai import clarifier, generate_quiz, generate_flashcards
 import shutil
 from scripts.ingestion import ingest
 from pathlib import Path
+from database import init_db, get_db, Topic as TopicModel
+from sqlalchemy.orm import Session
 
 #create fast api instance
 app = FastAPI()
+
+#initialise db
+init_db()
 
 #defines what the request body must look like, its a JSON object with a question field that must be a string. if its not, it will get rejected by fastapi with 422
 class Query(BaseModel):
@@ -69,3 +74,28 @@ def flashcards(request:FlashRequest):
         return {"flashcards":result}
     except Exception as e:
         raise HTTPException(status_code=503, detail = str(e))
+    
+#creates a schema for incoming JSON
+class TopicRequest(BaseModel):
+    name: str
+    priority: int = 1
+
+#db: Session = ... => is a dependency injection ie FastAPI sees Depends(get_db) and executes db =SessionLocal() from the database.py file, this means before the route runs, the db already has a session 
+@app.post("/topics")
+def add_topic(topic:TopicRequest, db: Session = Depends(get_db)):
+    #creates SQLAlchemy object
+    new_topic = TopicModel(name = topic.name, priority = topic.priority)
+    #adds object
+    db.add(new_topic)
+    #commits to db
+    db.commit()
+    #reread row/ refresh the DB, so that there is nothing none or missing
+    db.refresh(new_topic)
+    #retunrs new_topic as JSON object
+    return new_topic
+
+
+@app.get("/topics")
+def get_topics(db:Session = Depends(get_db)):
+    #reads every topic from DB and returns JSON
+    return db.query(TopicModel).all()
