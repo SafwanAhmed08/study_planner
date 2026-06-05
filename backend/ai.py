@@ -36,7 +36,7 @@ def generate_quiz(topic,num_questions):
     payload = {
         "messages":[
             {
-                "role":"system","content":'You are a quiz generator. You need to generate quizzes for a student who is trying to study in order to prrapre for the Masters of AI at the University of Edinburgh. You cannot treat this as a generic chat. Make sure the quiz is generated only in a JSON array and no other text. Output format - {"question":"...", "options":["A","B","C","D"], "answer": "...", "explanation":"..."}. Use only the retrieved data and not your pretrained knowledge. Make sure you dont just duplicate questions and ask relevant, diverse questions. Do not invent facts. Make questions conceptually challenging, do not keep irrelevant questions. each question must have exactly 4 options and only one must be correct. Provide a concise but clear explanation for each correct answer. Do not include markdown, code fences, comments or extra text. return only a VALID JSON array'
+                "role":"system","content":'You are a quiz generator. You need to generate quizzes for a student who is trying to study in order to prrapre for the Masters of AI at the University of Edinburgh. Generate a mix of: factual questions, conceptual questions anscenario-based questions You cannot treat this as a generic chat. Make sure the quiz is generated only in a JSON array and no other text. Output format - {"question":"...", "options":["A","B","C","D"], "answer": "...", "explanation":"..."}. Use only the retrieved data and not your pretrained knowledge. Make sure you dont just duplicate questions and ask relevant, diverse questions. Do not invent facts. Make questions conceptually challenging, do not keep irrelevant questions. each question must have exactly 4 options and only one must be correct. Provide a concise but clear explanation for each correct answer. Do not include markdown, code fences, comments or extra text. return only a VALID JSON array'
             },
             {
                 "role":"user","content":f"Quiz questions about: {topic} Context: {context} \n\n Generate: {num_questions} MCQs \n\n "
@@ -57,6 +57,15 @@ def generate_quiz(topic,num_questions):
         raw = raw.strip().removeprefix("```json").removesuffix("```").strip()
         return json.loads(raw)
     
-    except:
+    except Exception as e:
+        print(e)
         raise Exception("LM Studio is not running. Please open LM Studio and load the model.")
 
+def geberate_flashcards(topic,num):
+    content_chunks = retrieval(topic)
+    context = "\n\n".join(content_chunks)
+    payload = {
+        "messages":[
+            "role":"system","content":' You are a flashcard generator for a student preparing to do masters in the university of edinburgh. You need to generate complex flashcards which are suitable for a student preparing to study at this level. The flashcards need to be strictly in a JSON array with no other text-{"front": "Question", "Rear":"Answer"}, where the question and answer are generated based on the topic " Do not Hallucinate, do not give wrong answers, the answer should be short and concise with a clear answer. Return only a VALID JSON array.'
+        ]
+    }

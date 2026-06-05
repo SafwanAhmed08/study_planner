@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from pydantic import BaseModel  # used to ensure the data srnt by frontend is in the right shape
-from ai import clarifier
+from ai import clarifier, generate_quiz
 import shutil
 from scripts.ingestion import ingest
 from pathlib import Path
@@ -45,6 +45,15 @@ def upload(file: UploadFile = File(...)):
             save_path.unlink()
     return {"filename":file.filename, "status":"ingested"}
 
+class QuizRequest(BaseModel):
+    topic: str
+    num: int = 5
+
 @app.post("/quiz")
-def quiz():
-    return
+def quiz(request: QuizRequest):
+    try:
+        result = generate_quiz(request.topic,request.num)
+        return {"quiz":result} 
+        
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=str(e))
