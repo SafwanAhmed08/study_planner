@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel  # used to ensure the data srnt by frontend is in the right shape
-from ai import clarifier, generate_quiz, generate_flashcards
+from ai import clarifier, generate_quiz, generate_flashcards, generate_schedule
 import shutil
 from scripts.ingestion import ingest
 from pathlib import Path
@@ -99,3 +99,20 @@ def add_topic(topic:TopicRequest, db: Session = Depends(get_db)):
 def get_topics(db:Session = Depends(get_db)):
     #reads every topic from DB and returns JSON
     return db.query(TopicModel).all()
+
+class ScheduleRequest(BaseModel):
+    hours_per_day: float = 2.0
+    start: str
+    end: str
+
+@app.post("/schedule")
+def schedule(request: ScheduleRequest, db: Session = Depends(get_db)):
+    try:
+        topics = db.query(TopicModel).all()
+        if not topics:
+            raise HTTPException(status_code=400, detail="No topics found. Add topics first")
+        topics_list = [{"name":t.name, "priority":t.priority} for t in topics]
+        result = generate_schedule(topics_list, request.hours_per_day, request.start, request.end)
+        return {"schedule":result}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=str(e))

@@ -90,3 +90,40 @@ def generate_flashcards(topic,num):
     except Exception as e:
         print(e)
         raise Exception("LM Studio is not running. Please open LM Studio and load the model.")
+    
+
+def generate_schedule(topics, hours_per_day, start, end):
+    topics_text = "\n".join(
+        f"-{t['name']} (priority: {t['priority']}/3)"
+        for t in topics
+    )
+
+    payload = {
+        "messages": [
+            {
+                "role":"system",
+                "content":"""You are a study scheduler for a student about to join the university of Edinburgh's MSc in AI program. Generate a study schedule as a JSON Array only and no other text. Each item: {"week":1, "day":"Monday", "topic":"...","hours":2,"session_type":"study/revision/quiz"}
+                Rules:
+                - Mix topics across each week, do not do one topic per week
+                - Higher priority topics get more time
+                - Mix session types: study for new content, review for revision, quiz for testing
+                - Respect the hours per day limit
+                - Return ONLY the JSON array"""
+            },
+            {
+                "role":"user",
+                "content":f"Topics:\n{topics_text}\n\nHours per day:{hours_per_day}\n Start date: {start}\n End date: {end}\n\n Generate the schedule"
+            }
+        ],
+        "temperature":0.1,
+        "stream":False
+    }
+    headers ={
+        "Content-Type":"application/json"
+    }
+
+    response = requests.post(url,headers=headers, data = json.dumps(payload))
+    raw = response.json()["choices"][0]["message"]["content"]
+    raw = raw.strip().removeprefix("```json").removesuffix("```").strip()
+    return json.loads(raw)
+
