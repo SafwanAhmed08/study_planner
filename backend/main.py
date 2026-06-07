@@ -39,15 +39,15 @@ def upload(file: UploadFile = File(...), topic_id: int = Form(...), db: Session 
     with open(save_path,"wb") as f:
         #high performance utility to stream raw data from FastAPIs temporary cache (file.file) and writes it into permanent file
         shutil.copyfileobj(file.file,f)
-    
+    subtopics = []
     try:
         ingest(save_path,topic_id)
         text = extract_text(save_path)
         subtopics = detect_subtopics(text[:2000])
 
         for name in subtopics:
-            subtopics = Subtopic(name=name, topic_id=topic_id)
-            db.add(subtopics)
+            subtopic = Subtopic(name=name, topic_id=topic_id)
+            db.add(subtopic)
 
         doc = Document(filename = file.filename, topic_id = topic_id)
         db.add(doc)
