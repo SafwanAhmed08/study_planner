@@ -1,10 +1,10 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Form
 from pydantic import BaseModel  # used to ensure the data srnt by frontend is in the right shape
-from ai import clarifier, generate_quiz, generate_flashcards, generate_schedule
+from ai import clarifier, generate_quiz, generate_flashcards, generate_schedule, detect_subtopics
 import shutil
-from scripts.ingestion import ingest
+from scripts.ingestion import ingest, extract_text
 from pathlib import Path
-from database import init_db, get_db, Topic as TopicModel
+from database import init_db, get_db, Topic as TopicModel, Subtopic, Document
 from sqlalchemy.orm import Session
 
 #create fast api instance
@@ -30,7 +30,7 @@ def ask(query: Query):
     
 @app.post("/upload")
 #file: UploadFile - File(..) is a FastAPI special type which tells the framework to expect a file upload, it is highly efficient because it streams the incoming file. the Elepsis (...) tells that this file is strictly required and if its not provided, returns 422
-def upload(file: UploadFile = File(...)):
+def upload(file: UploadFile = File(...), topic_id: int = Form(...), db: Session = Depends(get_db)):
     # uses pathlib to create the directory
     save_path = Path("./data/uploads") / file.filename
     #parents = True means if the parent folders dont exist, create that as well
@@ -41,14 +41,28 @@ def upload(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file,f)
     
     try:
-    #ingest
-        ingest(save_path)
+        ingest(save_path,topic_id)
+        text = extract_text(save_path)
+        subtopics = detect_subtopics(text[:2000])
+
+        for name in subtopics:
+            subtopics = Subtopic(name=name, topic_id=topic_id)
+            db.add(subtopics)
+
+        doc = Document(filename = file.filename, topic_id = topic_id)
+        db.add(doc)
+        db.commit()
 
     #delete 
     finally:
         if save_path.exists():
             save_path.unlink()
-    return {"filename":file.filename, "status":"ingested"}
+    return {
+        "filename": file.filename,
+        "status": "ingested",
+        "topic_id": topic_id,
+        "subtopics": subtopics
+    }
 
 class QuizRequest(BaseModel):
     topic: str
@@ -116,3 +130,7 @@ def schedule(request: ScheduleRequest, db: Session = Depends(get_db)):
         return {"schedule":result}
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
+    
+
+
+ 

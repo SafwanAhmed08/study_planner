@@ -43,24 +43,27 @@ def already_ingested(file_hash):
     )
     return len(results["ids"])>0
 
-def ingest(path):
+#this function was seperated for identifying subtopic 
+def extract_text(path):
     path = Path(path)
-    file_hash = get_hash(path)
-
-    if already_ingested(file_hash):
-        print(f"File {path} already ingested") 
-        return
-    
     reader = PdfReader(path)
     text = "\n\n".join(page.extract_text() or "" for page in reader.pages)
-    cleaned = clean_text(text)
+    return clean_text(text)
+
+def ingest(path,topic_id):
+    path = Path(path)
+    file_hash = get_hash(path)
+    if already_ingested(file_hash):
+        return
+    
+    text = extract_text(path)
 
     chunks = []
     splitter = RecursiveCharacterTextSplitter(
         chunk_size = 1000,
         chunk_overlap = 200,
     )
-    chunks = splitter.split_text(cleaned)
+    chunks = splitter.split_text(text)
 
     if not chunks:
         return
@@ -76,7 +79,8 @@ def ingest(path):
         {
             "source": path.name,
             "file_hash": file_hash,
-            "chunk_index": i,
+            "topic_id": topic_id,
+            "chunk_index": i
         }
         for i in range(len(chunks))
     ]

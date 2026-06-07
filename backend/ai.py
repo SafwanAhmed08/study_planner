@@ -4,6 +4,10 @@ from scripts.retrieval import retrieval
 
 url = "http://localhost:1234/v1/chat/completions"
 
+headers ={
+        "Content-Type":"application/json"
+    }
+
 def clarifier(query):
     context_chunks = retrieval(query)
     context = "\n\n".join(context_chunks)
@@ -118,10 +122,30 @@ def generate_schedule(topics, hours_per_day, start, end):
         "temperature":0.1,
         "stream":False
     }
-    headers ={
-        "Content-Type":"application/json"
-    }
 
+    response = requests.post(url,headers=headers, data = json.dumps(payload))
+    raw = response.json()["choices"][0]["message"]["content"]
+    raw = raw.strip().removeprefix("```json").removesuffix("```").strip()
+    return json.loads(raw)
+
+def detect_subtopics(text_sample):
+    payload = {
+        "messages": [
+            {
+                "role":"system",
+                "content": """You are a topic analyser. Given a sample of study material, identify the specific subtopics covered.
+                Return ONLY a JSON array of subtopic names, nothing else. No explanation, no markdown.
+                Example: ["Virtual Machines", "Hypervisors", "Container Technology"]"""
+            },
+            {
+                "role":"user",
+                "content":f"Identify the subtopics in this study material:\n\n{text_sample[:2000]}"
+            }
+        ],
+        "temperature":0.1,
+        "stream":False
+    }
+    
     response = requests.post(url,headers=headers, data = json.dumps(payload))
     raw = response.json()["choices"][0]["message"]["content"]
     raw = raw.strip().removeprefix("```json").removesuffix("```").strip()

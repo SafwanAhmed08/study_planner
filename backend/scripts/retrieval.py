@@ -5,7 +5,7 @@ from sentence_transformers import CrossEncoder
 reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
 client = chromadb.PersistentClient(path = "../data/chroma")
-collection = client.get_collection("Study_materials")
+collection = client.get_or_create_collection("Study_materials")
 
 #Basic retrieval didnt work so switched to HyDE- Hypothetical Document Embeddings. 
 # Hyde failed, which is why im now working on getting the basic RAG fixed
