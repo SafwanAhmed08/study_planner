@@ -132,18 +132,61 @@ def detect_subtopics(text_sample):
     payload = {
         "messages": [
             {
-                "role":"system",
-                "content": """You are a topic analyser. Given a sample of study material, identify the specific subtopics covered.
-                Return ONLY a JSON array of subtopic names, nothing else. No explanation, no markdown.
-                Example: ["Virtual Machines", "Hypervisors", "Container Technology"]"""
+                "role": "system",
+                "content": """
+                    You are an academic curriculum parser.
+
+                    Your task is to identify the lecture or revision topics covered in the material.
+
+                    A topic should be something a student would write in a study plan, course syllabus, lecture list, or revision tracker.
+
+                    Rules:
+                    - Prefer lecture titles, section titles, and named academic topics.
+                    - Prefer the highest-level topic that is actually being taught.
+                    - Do NOT extract internal components, examples, definitions, or implementation details.
+                    - Do NOT extract supporting concepts unless they are taught as standalone topics.
+                    - If a lecture is titled "Infrastructure as a Service (IaaS)", return "Infrastructure as a Service (IaaS)" rather than "Cloud Service Models".
+                    - If a lecture is titled "Cloud Architecture", return "Cloud Architecture" rather than "Front-end", "Back-end", or "Network".
+                    - Remove duplicates and near-duplicates.
+                    - Return between 1 and 5 topics.
+                    - Return ONLY a valid JSON array of strings.
+                    - No explanations.
+                    - No markdown.
+
+                    Examples:
+
+                    Input:
+                    Lecture titled "Infrastructure as a Service (IaaS)"
+                    Content discusses service models and examples.
+
+                    Output:
+                    ["Infrastructure as a Service (IaaS)"]
+
+                    Input:
+                    Lecture titled "Cloud Architecture"
+                    Content discusses front-end, back-end, storage, and security.
+
+                    Output:
+                    ["Cloud Architecture"]
+
+                    Input:
+                    Material covers three distinct units:
+                    Cloud Architecture
+                    Virtualization
+                    Cloud Service Models
+
+                    Output:
+                    ["Cloud Architecture", "Virtualization", "Cloud Service Models"]
+                    """
             },
             {
                 "role":"user",
                 "content":f"Identify the subtopics in this study material:\n\n{text_sample[:2000]}"
             }
         ],
-        "temperature":0.1,
-        "stream":False
+        "temperature":0,
+        "stream":False,
+        "reasoning": "off"
     }
     
     response = requests.post(url,headers=headers, data = json.dumps(payload))
