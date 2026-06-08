@@ -134,50 +134,16 @@ def detect_subtopics(text_sample):
             {
                 "role": "system",
                 "content": """
-                    You are an academic curriculum parser.
+            Return the main lecture topic.
 
-                    Your task is to identify the lecture or revision topics covered in the material.
+            Use the document title or strongest heading.
+            Do not list components or details.
+            Return ONLY a JSON array with 1-3 strings.
 
-                    A topic should be something a student would write in a study plan, course syllabus, lecture list, or revision tracker.
-
-                    Rules:
-                    - Prefer lecture titles, section titles, and named academic topics.
-                    - Prefer the highest-level topic that is actually being taught.
-                    - Do NOT extract internal components, examples, definitions, or implementation details.
-                    - Do NOT extract supporting concepts unless they are taught as standalone topics.
-                    - If a lecture is titled "Infrastructure as a Service (IaaS)", return "Infrastructure as a Service (IaaS)" rather than "Cloud Service Models".
-                    - If a lecture is titled "Cloud Architecture", return "Cloud Architecture" rather than "Front-end", "Back-end", or "Network".
-                    - Remove duplicates and near-duplicates.
-                    - Return between 1 and 5 topics.
-                    - Return ONLY a valid JSON array of strings.
-                    - No explanations.
-                    - No markdown.
-
-                    Examples:
-
-                    Input:
-                    Lecture titled "Infrastructure as a Service (IaaS)"
-                    Content discusses service models and examples.
-
-                    Output:
-                    ["Infrastructure as a Service (IaaS)"]
-
-                    Input:
-                    Lecture titled "Cloud Architecture"
-                    Content discusses front-end, back-end, storage, and security.
-
-                    Output:
-                    ["Cloud Architecture"]
-
-                    Input:
-                    Material covers three distinct units:
-                    Cloud Architecture
-                    Virtualization
-                    Cloud Service Models
-
-                    Output:
-                    ["Cloud Architecture", "Virtualization", "Cloud Service Models"]
-                    """
+            Examples:
+            Cloud Architecture -> ["Cloud Architecture"]
+            Infrastructure as a Service (IaaS) -> ["Infrastructure as a Service (IaaS)"]
+            """
             },
             {
                 "role":"user",
