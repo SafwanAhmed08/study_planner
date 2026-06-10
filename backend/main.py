@@ -6,6 +6,7 @@ from scripts.ingestion import ingest, extract_text
 from pathlib import Path
 from database import init_db, get_db, Topic as TopicModel, Subtopic, Document
 from sqlalchemy.orm import Session
+from typing import List #for uploading folder
 
 #create fast api instance
 app = FastAPI()
@@ -40,28 +41,90 @@ def upload(file: UploadFile = File(...), topic_id: int = Form(...), db: Session 
         #high performance utility to stream raw data from FastAPIs temporary cache (file.file) and writes it into permanent file
         shutil.copyfileobj(file.file,f)
     subtopics = []
-    try:
-        ingest(save_path,topic_id)
-        text = extract_text(save_path)
-        subtopics = detect_subtopics(text[:2000])
+    result = ingest(save_path,topic_id)
+    if result["status"]=="skipped":
+            return {
+                "filename": file.filename,
+                "status": "skipped",
+                "reason": result["reason"],
+                "topic_id": topic_id
+            }
+        
+    text = extract_text(save_path)
+    subtopics = detect_subtopics(text[:2000])
 
-        for name in subtopics:
+    for name in subtopics:
             subtopic = Subtopic(name=name, topic_id=topic_id)
             db.add(subtopic)
 
-        doc = Document(filename = file.filename, topic_id = topic_id)
-        db.add(doc)
-        db.commit()
+    doc = Document(filename = file.filename, topic_id = topic_id)
+    db.add(doc)
+    db.commit()
 
-    #delete 
-    finally:
-        if save_path.exists():
-            save_path.unlink()
     return {
         "filename": file.filename,
         "status": "ingested",
         "topic_id": topic_id,
-        "subtopics": subtopics
+        "subtopics": subtopics,
+        "chunks": result["chunks"]
+    }
+
+@app.post("/uploadFolder")
+def uploadFolder(files: List[UploadFile] = File(...), topic_id: int = Form(...), db: Session = Depends(get_db)):
+    upload_dir = Path("./data/uploads")
+    upload_dir.mkdir(parents=True, exist_ok= True)
+
+    results = []
+
+    for file in files:
+        savepath = upload_dir/file.filename
+        subtopics = []
+
+        try:
+            with open(savepath, "wb") as f:
+                shutil.copyfileobj(file.file, f)
+
+            result = ingest(savepath, topic_id)
+            if result["status"]=="skipped":
+                results.append({
+                    "filename": file.filename,
+                    "status": "skipped",
+                    "subtopics": subtopics
+                })
+                continue
+            text = extract_text(savepath)
+            subtopics = detect_subtopics(text[:2000])
+
+            for name in subtopics:
+                subtopic = Subtopic(
+                    name = name,
+                    topic_id = topic_id
+                )
+                db.add(subtopic)
+            
+            doc = Document(
+                filename = file.filename,
+                topic_id = topic_id
+            )
+            db.add(doc)
+            db.commit()
+
+            results .append({
+                "filename": file.filename,
+                "status": "ingested",
+                "subtopics": subtopics
+            })
+        except Exception as e:
+            results.append({
+                "filename": file.filename,
+                "status": "failed",
+                "error": str(e)
+            })
+        
+    return{
+            "topic_id": topic_id,
+            "files_processed": len(results),
+            "results": results
     }
 
 class QuizRequest(BaseModel):
@@ -125,12 +188,15 @@ def schedule(request: ScheduleRequest, db: Session = Depends(get_db)):
         topics = db.query(TopicModel).all()
         if not topics:
             raise HTTPException(status_code=400, detail="No topics found. Add topics first")
-        topics_list = [{"name":t.name, "priority":t.priority} for t in topics]
+        topics_list = [{"name":t.name,
+                        "priority":t.priority,
+                        "subtopics": [
+                            s.name for s in db.query(Subtopic).filter(Subtopic.topic_id == t.id).all()
+                        ]
+                        } for t in topics]
         result = generate_schedule(topics_list, request.hours_per_day, request.start, request.end)
         return {"schedule":result}
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
     
 
-
- 

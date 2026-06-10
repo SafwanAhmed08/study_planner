@@ -12,7 +12,7 @@ collection = client.get_or_create_collection("Study_materials")
 # used reranking, with a combo of bi encoder - which is quite fast but not precise and a cross encoder - which is slow, thats why im using it only on top 20. The bi encoder is used while saving data into the vector database, the cross encoder has been added explicitly later.
 
 
-def retrieval(query):
+def retrieval(query, topic_id = None):
     result = collection.query(query_texts=[query], n_results=20)
     chunks = result["documents"][0]
 

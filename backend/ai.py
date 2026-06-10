@@ -98,7 +98,7 @@ def generate_flashcards(topic,num):
 
 def generate_schedule(topics, hours_per_day, start, end):
     topics_text = "\n".join(
-        f"-{t['name']} (priority: {t['priority']}/3)"
+        f"-{t['name']} (priority: {t['priority']}/3)\n Subtopics: {', '.join(t['subtopics'])}"
         for t in topics
     )
 
@@ -135,7 +135,7 @@ def detect_subtopics(text_sample):
                 "role": "system",
                 "content": """
             Return the main lecture topic.
-
+            - Ignore broad course headers like "CLOUD COMPUTING".
             Use the document title or strongest heading.
             Do not list components or details.
             Return ONLY a JSON array with 1-3 strings.

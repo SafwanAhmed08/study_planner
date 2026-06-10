@@ -54,7 +54,11 @@ def ingest(path,topic_id):
     path = Path(path)
     file_hash = get_hash(path)
     if already_ingested(file_hash):
-        return
+        return{
+            "status":"skipped",
+            "reason":"duplicate",
+            "file_hash":file_hash
+        }
     
     text = extract_text(path)
 
@@ -66,7 +70,11 @@ def ingest(path,topic_id):
     chunks = splitter.split_text(text)
 
     if not chunks:
-        return
+        return{
+            "status": "skipped",
+            "reason": "no_text",
+            "file_hash": file_hash
+        }
 
     embeddings = model.encode(chunks)
 
@@ -91,8 +99,13 @@ def ingest(path,topic_id):
         embeddings=embeddings.tolist(),
         metadatas=metadatas
     )
+    return {
+        "status": "ingested",
+        "file_hash": file_hash,
+        "chunks": len(chunks)
+    }
 
-def ingest_folder(folder_path = "./material"):
+def ingest_folder(folder_path,topic_id):
     folder = Path(folder_path)
 
     pdfs = list(folder.glob("*.pdf"))
@@ -102,11 +115,11 @@ def ingest_folder(folder_path = "./material"):
     
     for pdf in pdfs:
         try:
-            ingest(pdf)
+            ingest(pdf,topic_id)
         except Exception as e:
             print(f"Error processing {pdf.name}: {e}")
 
-ingest_folder()
+# ingest_folder()
 
 results = collection.get(include=["metadatas"])
 
