@@ -11,8 +11,10 @@ import chromadb
 #embedding model
 model = SentenceTransformer("all-MiniLM-L6-v2") #chose MiniLM becuase its small and good enough for embeddings. might switch to allenai/specter later
 
+DATA_PATH = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
+
 #chroma
-client = chromadb.PersistentClient(path = "./data/chroma")
+client = chromadb.PersistentClient(path = f"{DATA_PATH}/chroma")
 collection = client.get_or_create_collection("Study_materials")
 
 def clean_text(text):

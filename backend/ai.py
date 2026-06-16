@@ -8,8 +8,10 @@ headers ={
         "Content-Type":"application/json"
     }
 
-def clarifier(query):
-    context_chunks = retrieval(query)
+def clarifier(query, topic_id = None):
+    context_chunks = retrieval(query,topic_id)
+    for i,chunk in enumerate(context_chunks):
+        print("Chunk:",chunk)
     context = "\n\n".join(context_chunks)
     #role: system - sets the guardrails and behavior for AI. role: user - explains the users prompt. 
     payload = {

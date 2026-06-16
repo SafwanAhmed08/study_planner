@@ -4,7 +4,10 @@ from sentence_transformers import CrossEncoder
 
 reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
-client = chromadb.PersistentClient(path = "../data/chroma")
+DATA_PATH = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
+
+
+client = chromadb.PersistentClient(path = f"{DATA_PATH}/chroma")
 collection = client.get_or_create_collection("Study_materials")
 
 #Basic retrieval didnt work so switched to HyDE- Hypothetical Document Embeddings. 
@@ -13,7 +16,9 @@ collection = client.get_or_create_collection("Study_materials")
 
 
 def retrieval(query, topic_id = None):
-    result = collection.query(query_texts=[query], n_results=20)
+    where = {"topic_id": topic_id} if topic_id else None
+
+    result = collection.query(query_texts=[query], n_results=20, where = where)
     chunks = result["documents"][0]
 
     # rerank them

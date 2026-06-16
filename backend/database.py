@@ -5,8 +5,10 @@ from sqlalchemy import create_engine, Column, String, Integer, ForeignKey
 #ORM - Object Relational Mapper => Python object <=> DB row
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
+BASE = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
+DB = f"sqlite:///{BASE}/study_planner.db"
 #create engine is used to create a connection to the database. "sqlite:///" means you are using SQlite and ./data/study_planner.db is the file name
-engine = create_engine("sqlite:///./data/study_planner.db")
+engine = create_engine(DB)
 #creates a session factory, A session is how you talk to the database
 #DB <=> Engine [knows where the db is, how to connect and how to send sql] <=> Session Factory [OOAD factory class] <=> Session
 SessionLocal = sessionmaker(bind = engine)

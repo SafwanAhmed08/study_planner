@@ -8,6 +8,7 @@ from database import init_db, get_db, Topic as TopicModel, Subtopic, Document
 from sqlalchemy.orm import Session
 from typing import List #for uploading folder
 
+DATA_PATH = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
 #create fast api instance
 app = FastAPI()
 
@@ -17,14 +18,15 @@ init_db()
 #defines what the request body must look like, its a JSON object with a question field that must be a string. if its not, it will get rejected by fastapi with 422
 class Query(BaseModel):
     question: str
+    topic_id: int = None
 
 #defines it as a post function
 @app.post("/ask")
 #the query: Query, automatically pases the body into Query object
-def ask(query: Query):
+def ask(query: Query, db: Session = Depends(get_db)):
     try:
         #pulls the q from Query object and passes it to clarifier
-        answer = clarifier(query.question)
+        answer = clarifier(query.question, query.topic_id)
         return {"answer":answer}
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -33,7 +35,7 @@ def ask(query: Query):
 #file: UploadFile - File(..) is a FastAPI special type which tells the framework to expect a file upload, it is highly efficient because it streams the incoming file. the Elepsis (...) tells that this file is strictly required and if its not provided, returns 422
 def upload(file: UploadFile = File(...), topic_id: int = Form(...), db: Session = Depends(get_db)):
     # uses pathlib to create the directory
-    save_path = Path("./data/uploads") / file.filename
+    save_path = Path(f"{DATA_PATH}/uploads") / file.filename
     #parents = True means if the parent folders dont exist, create that as well
     save_path.parent.mkdir(parents = True,exist_ok=True)
     #opens a new empty file at the path in write binary mode. 
@@ -71,7 +73,7 @@ def upload(file: UploadFile = File(...), topic_id: int = Form(...), db: Session 
 
 @app.post("/uploadFolder")
 def uploadFolder(files: List[UploadFile] = File(...), topic_id: int = Form(...), db: Session = Depends(get_db)):
-    upload_dir = Path("./data/uploads")
+    upload_dir = Path(f"{DATA_PATH}/uploads")
     upload_dir.mkdir(parents=True, exist_ok= True)
 
     results = []
