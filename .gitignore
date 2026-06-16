@@ -4,3 +4,4 @@ material/
 backend/__pycache__/ai.cpython-314.pyc
 backend/__pycache__/main.cpython-314.pyc
 backend/__pycache__/
+frontend/

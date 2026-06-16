@@ -12,7 +12,6 @@ DATA_PATH = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
 #create fast api instance
 app = FastAPI()
 
-#namesake
 
 #initialise db
 init_db()
@@ -175,7 +174,6 @@ def add_topic(topic:TopicRequest, db: Session = Depends(get_db)):
     #retunrs new_topic as JSON object
     return new_topic
 
-
 @app.get("/topics")
 def get_topics(db:Session = Depends(get_db)):
     #reads every topic from DB and returns JSON
@@ -204,3 +202,10 @@ def schedule(request: ScheduleRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=503, detail=str(e))
     
 
+@app.get("/subtopics/{topic_id}")
+def get_subtopics(topic_id: int, db: Session = Depends(get_db)):
+    subtopics = db.query(Subtopic).filter(Subtopic.topic_id == topic_id).all()
+    return {
+        "topic_id": topic_id,
+        "subtopics": [{"id": s.id, "name": s.name} for s in subtopics]
+    }
