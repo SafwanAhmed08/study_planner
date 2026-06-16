@@ -12,6 +12,8 @@ DATA_PATH = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
 #create fast api instance
 app = FastAPI()
 
+#namesake
+
 #initialise db
 init_db()
 
