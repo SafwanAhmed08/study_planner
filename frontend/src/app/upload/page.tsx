@@ -70,20 +70,44 @@ export default function UploadPage(){
             </div>
 
             {/* file picker */}
-            <div className="mb-6">
-                <label className="block text-sm text-gray-400 mb-2">Select Files or Folder</label>
-                <input
-                    type="file"
-                    multiple
-                    // @ts-ignore
-                    // webkitdirectory=""
-                    onChange={e => setFiles(Array.from(e.target.files || []))}
-                    className="w-full bg-gray-800 rounded-lg px-4 py-2"
-                />
-                {files.length > 0 && (
-                    <p className="text-sm text-gray-400 mt-2">{files.length} file(s) selected</p>
-                )}
+            <input
+                id="file-input"
+                type="file"
+                multiple
+                accept=".pdf"
+                className="hidden"
+                onChange={e => setFiles(Array.from(e.target.files || []))}
+            />
+
+            {/* folder picker */}
+            <input
+                id="folder-input"
+                type="file"
+                // @ts-ignore
+                webkitdirectory=""
+                className="hidden"
+                onChange={e => setFiles(Array.from(e.target.files || []))}
+            />
+
+            {/* buttons that trigger the hidden inputs */}
+            <div className="flex gap-3">
+                <button
+                    onClick={() => document.getElementById("file-input")?.click()}
+                    className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg"
+                >
+                    Select Files
+                </button>
+                <button
+                    onClick={() => document.getElementById("folder-input")?.click()}
+                    className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg"
+                >
+                    Select Folder
+                </button>
             </div>
+
+            {files.length > 0 && (
+                <p className="text-sm text-gray-400 mt-2">{files.length} file(s) selected</p>
+            )}
 
             {/* upload button */}
             <button

@@ -84,61 +84,78 @@ def upload(file: UploadFile = File(...), topic_id: int = Form(...), db: Session 
     }
 
 @app.post("/uploadFolder")
-def uploadFolder(files: List[UploadFile] = File(...), topic_id: int = Form(...), db: Session = Depends(get_db)):
+@app.post("/uploadFolder")
+def uploadFolder(
+    files: List[UploadFile] = File(...),
+    topic_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
     upload_dir = Path(f"{DATA_PATH}/uploads")
-    upload_dir.mkdir(parents=True, exist_ok= True)
+    upload_dir.mkdir(parents=True, exist_ok=True)
 
     results = []
 
     for file in files:
-        savepath = upload_dir/file.filename
+        safe_filename = Path(file.filename).name
+        savepath = upload_dir / safe_filename
         subtopics = []
 
         try:
+            file.file.seek(0)
+
             with open(savepath, "wb") as f:
                 shutil.copyfileobj(file.file, f)
 
-            result = ingest(savepath, topic_id)
-            if result["status"]=="skipped":
+            if savepath.stat().st_size == 0:
                 results.append({
-                    "filename": file.filename,
+                    "filename": safe_filename,
+                    "status": "failed",
+                    "error": "Uploaded file is empty"
+                })
+                continue
+
+            result = ingest(savepath, topic_id)
+
+            if result["status"] == "skipped":
+                results.append({
+                    "filename": safe_filename,
                     "status": "skipped",
+                    "reason": result.get("reason"),
                     "subtopics": subtopics
                 })
                 continue
+
             text = extract_text(savepath)
             subtopics = detect_subtopics(text[:2000])
 
             for name in subtopics:
-                subtopic = Subtopic(
-                    name = name,
-                    topic_id = topic_id
-                )
-                db.add(subtopic)
-            
-            doc = Document(
-                filename = file.filename,
-                topic_id = topic_id
-            )
-            db.add(doc)
+                db.add(Subtopic(name=name, topic_id=topic_id))
+
+            db.add(Document(filename=safe_filename, topic_id=topic_id))
             db.commit()
 
-            results .append({
-                "filename": file.filename,
+            results.append({
+                "filename": safe_filename,
                 "status": "ingested",
                 "subtopics": subtopics
             })
+
         except Exception as e:
+            db.rollback()
             results.append({
-                "filename": file.filename,
+                "filename": safe_filename,
                 "status": "failed",
                 "error": str(e)
             })
-        
-    return{
-            "topic_id": topic_id,
-            "files_processed": len(results),
-            "results": results
+
+        finally:
+            if savepath.exists():
+                savepath.unlink()
+
+    return {
+        "topic_id": topic_id,
+        "files_processed": len(results),
+        "results": results
     }
 
 class QuizRequest(BaseModel):
