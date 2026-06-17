@@ -7,10 +7,21 @@ from pathlib import Path
 from database import init_db, get_db, Topic as TopicModel, Subtopic, Document
 from sqlalchemy.orm import Session
 from typing import List #for uploading folder
+from fastapi.middleware.cors import CORSMiddleware
+
+
 
 DATA_PATH = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
 #create fast api instance
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 #initialise db
