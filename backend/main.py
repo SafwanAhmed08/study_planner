@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 DATA_PATH = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
 #create fast api instance
 app = FastAPI()
-
+# needed because browser blocks requests from different ports. 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
