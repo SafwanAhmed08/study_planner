@@ -97,6 +97,17 @@ def uploadFolder(
 
     for file in files:
         safe_filename = Path(file.filename).name
+        if safe_filename == ".DS_Store":
+            continue
+
+        if safe_filename.startswith(".") or not safe_filename.lower().endswith(".pdf"):
+            results.append({
+                "filename": safe_filename,
+                "status": "skipped",
+                "reason": "not a PDF"
+            })
+            continue
+
         savepath = upload_dir / safe_filename
         subtopics = []
 
