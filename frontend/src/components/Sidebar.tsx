@@ -19,7 +19,7 @@ import{
 const links = [
     { href: '/', label: "Dashboard", icon: LayoutDashboard},
     { href: "/topics", label: "Topics", icon: Calendar},
-    { href: "/uploads", label: "Upload", icon: Upload},
+    { href: "/upload", label: "Upload", icon: Upload},
     { href: "/ask", label: "Ask", icon: MessageSquare},
     { href: "/quiz", label: "Quiz", icon: Brain},
     { href: "/flashcards", label: "Flashcards", icon: CreditCard},
