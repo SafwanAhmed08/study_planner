@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type Message = {
     role: "user" | "assistant";
@@ -100,7 +102,44 @@ export default function AskPage() {
                                 ? "bg-blue-600 text-white"
                                 : "bg-gray-800 text-gray-100"
                         }`}>
-                            {msg.content}
+                            {msg.role === "assistant" ? (
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        h1: ({ children }) => (
+                                            <h1 className="text-xl font-bold mt-4 mb-2">{children}</h1>
+                                        ),
+                                        h2: ({ children }) => (
+                                            <h2 className="text-lg font-bold mt-4 mb-2">{children}</h2>
+                                        ),
+                                        h3: ({ children }) => (
+                                            <h3 className="text-base font-semibold mt-4 mb-2 text-blue-300">{children}</h3>
+                                        ),
+                                        p: ({ children }) => (
+                                            <p className="mb-3 leading-relaxed">{children}</p>
+                                        ),
+                                        ul: ({ children }) => (
+                                            <ul className="list-disc ml-5 mb-3 space-y-1">{children}</ul>
+                                        ),
+                                        ol: ({ children }) => (
+                                            <ol className="list-decimal ml-5 mb-3 space-y-1">{children}</ol>
+                                        ),
+                                        li: ({ children }) => (
+                                            <li className="leading-relaxed">{children}</li>
+                                        ),
+                                        strong: ({ children }) => (
+                                            <strong className="font-semibold text-white">{children}</strong>
+                                        ),
+                                        code: ({ children }) => (
+                                            <code className="bg-gray-900 px-1 py-0.5 rounded text-sm">{children}</code>
+                                        ),
+                                    }}
+                                >
+                                    {msg.content}
+                                </ReactMarkdown>
+                            ) : (
+                                msg.content
+                            )}
                         </div>
                     </div>
                 ))}
