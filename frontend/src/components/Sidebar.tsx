@@ -20,7 +20,7 @@ const links = [
     { href: '/', label: "Dashboard", icon: LayoutDashboard},
     { href: "/topics", label: "Topics", icon: Calendar},
     { href: "/upload", label: "Upload", icon: Upload},
-    { href: "/ask", label: "Ask", icon: MessageSquare},
+    { href: "/chat", label: "Chat", icon: MessageSquare},
     { href: "/quiz", label: "Quiz", icon: Brain},
     { href: "/flashcards", label: "Flashcards", icon: CreditCard},
     { href: "/schedule", label: "Schedule", icon: BookOpen}
