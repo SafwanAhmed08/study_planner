@@ -25,7 +25,7 @@ export default function QuizPage() {
     const [subtopics, setSubtopics] = useState<Subtopic[]>([]);
     const [topicId, setTopicId] = useState<number | null>(null);
     const [subtopicId, setSubtopicId] = useState<number | null>(null);
-    const [numQuestions, setNumQuestions] = useState(5);
+    const [numQuestions, setNumQuestions] = useState("5");
     const [questions, setQuestions] = useState<Question[]>([]);
     const [answers, setAnswers] = useState<Record<number, string>>({});
     const [submitted, setSubmitted] = useState(false);
@@ -52,8 +52,16 @@ export default function QuizPage() {
         if (data.subtopics.length > 0) setSubtopicId(data.subtopics[0].id);
     };
 
+    const questionCount = Number(numQuestions);
+
+    const invalidQuestionCount =
+        !numQuestions.trim() ||
+        !/^\d+$/.test(numQuestions.trim()) ||
+        questionCount < 1 ||
+        questionCount > 5;
+
     const handleGenerate = async () => {
-        if (!subtopicId) return;
+        if (!subtopicId || invalidQuestionCount) return;
         setLoading(true);
         setQuestions([]);
         setAnswers({});
@@ -62,7 +70,7 @@ export default function QuizPage() {
         try {
             const { data } = await axios.post("http://localhost:8000/quiz", {
                 subtopic_id: subtopicId,
-                num_questions: numQuestions
+                num_questions: questionCount
             });
             setQuestions(data.quiz);
         } catch (e) {
@@ -121,21 +129,20 @@ export default function QuizPage() {
 
                 <div className="flex flex-col gap-1">
                     <label className="text-sm text-gray-400">Questions</label>
-                    <select
+                    <input
+                        type="text"
+                        inputMode="numeric"
                         value={numQuestions}
-                        onChange={e => setNumQuestions(Number(e.target.value))}
-                        className="bg-gray-800 rounded-lg px-4 py-2 outline-none"
-                    >
-                        {[3, 5, 10].map(n => (
-                            <option key={n} value={n}>{n}</option>
-                        ))}
-                    </select>
+                        onChange={e => setNumQuestions(e.target.value)}
+                        placeholder="5"
+                        className="bg-gray-800 rounded-lg px-4 py-2 outline-none w-24"
+                    />
                 </div>
 
                 <div className="flex items-end">
                     <button
                         onClick={handleGenerate}
-                        disabled={loading || !subtopicId}
+                        disabled={loading || !subtopicId || invalidQuestionCount}
                         className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-6 py-2 rounded-lg"
                     >
                         {loading ? "Generating..." : "Generate Quiz"}

@@ -36,8 +36,8 @@ def clarifier(query, topic_id = None):
 
     return response.json()["choices"][0]["message"]["content"]
 
-def generate_quiz(topic,num_questions):
-    content_chunks = retrieval(topic)
+def generate_quiz(subtopic,topic,num_questions):
+    content_chunks = retrieval(subtopic,topic)
     context = "\n\n".join(content_chunks)
     payload = {
         "messages":[
@@ -45,7 +45,7 @@ def generate_quiz(topic,num_questions):
                 "role":"system","content":'You are a quiz generator. You need to generate quizzes for a student who is trying to study in order to prrapre for the Masters of AI at the University of Edinburgh. Generate a mix of: factual questions, conceptual questions anscenario-based questions You cannot treat this as a generic chat. Make sure the quiz is generated only in a JSON array and no other text. Output format - {"question":"...", "options":["A","B","C","D"], "answer": "...", "explanation":"..."}. Use only the retrieved data and not your pretrained knowledge. Make sure you dont just duplicate questions and ask relevant, diverse questions. Do not invent facts. Make questions conceptually challenging, do not keep irrelevant questions. each question must have exactly 4 options and only one must be correct. Provide a concise but clear explanation for each correct answer. Do not include markdown, code fences, comments or extra text. return only a VALID JSON array'
             },
             {
-                "role":"user","content":f"Quiz questions about: {topic} Context: {context} \n\n Generate: {num_questions} MCQs \n\n "
+                "role":"user","content":f"Quiz questions about: {subtopic} Context: {context} \n\n Generate: {num_questions} MCQs \n\n "
             }
         ],
         "temperature":0.1,

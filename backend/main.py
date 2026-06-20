@@ -170,13 +170,16 @@ def uploadFolder(
     }
 
 class QuizRequest(BaseModel):
-    topic: str
-    num: int = 5
+    subtopic_id: int
+    num_questions: int
 
 @app.post("/quiz")
-def quiz(request: QuizRequest):
+def quiz(request: QuizRequest,db:Session = Depends(get_db)):
     try:
-        result = generate_quiz(request.topic,request.num)
+        subtopic = db.query(Subtopic).filter(Subtopic.id == request.subtopic_id).first()
+        if not subtopic:
+            raise HTTPException(status_code=404, detail="Subtopic not found")
+        result = generate_quiz(subtopic.name,subtopic.topic_id,request.num_questions)
         return {"quiz":result} 
         
     except Exception as e:
