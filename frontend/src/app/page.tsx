@@ -1,65 +1,119 @@
-import Image from "next/image";
+"use client";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import Link from "next/link";
+import { BookOpen, Upload, MessageSquare, Brain, CreditCard, Calendar } from "lucide-react";
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+type Topic = {
+    id: number;
+    name: string;
+    priority: number;
+}
+
+type Subtopic = {
+    id: number;
+    name: string;
+    topic_id: number;
+}
+
+export default function Dashboard() {
+    const [topics, setTopics] = useState<Topic[]>([]);
+    const [subtopicCounts, setSubtopicCounts] = useState<Record<number, number>>({});
+    const [chunkCounts, setChunkCounts] = useState<Record<number, number>>({});
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        const { data: topicsData } = await axios.get("http://localhost:8000/topics");
+        setTopics(topicsData);
+
+        // fetch subtopic counts per topic
+        const counts: Record<number, number> = {};
+        const chunks: Record<number, number> = {};
+
+        await Promise.all(topicsData.map(async (t: Topic) => {
+            const { data: sub } = await axios.get(`http://localhost:8000/subtopics/${t.id}`);
+            counts[t.id] = sub.subtopics.length;
+
+            const { data: chunkData } = await axios.get(`http://localhost:8000/chunks/${t.id}`);
+            chunks[t.id] = chunkData.chunk_count;
+        }));
+
+        setSubtopicCounts(counts);
+        setChunkCounts(chunks);
+    };
+
+    const priorityLabel = (p: number) => p === 3 ? "High" : p === 2 ? "Medium" : "Low";
+    const priorityColor = (p: number) => p === 3 ? "bg-red-600" : p === 2 ? "bg-yellow-600" : "bg-green-600";
+
+    const quickLinks = [
+        { href: "/topics", label: "Manage Topics", icon: BookOpen, color: "bg-blue-600" },
+        { href: "/upload", label: "Upload Material", icon: Upload, color: "bg-green-600" },
+        { href: "/chat", label: "Ask a Question", icon: MessageSquare, color: "bg-purple-600" },
+        { href: "/quiz", label: "Take a Quiz", icon: Brain, color: "bg-yellow-600" },
+        { href: "/flashcards", label: "Flashcards", icon: CreditCard, color: "bg-pink-600" },
+        { href: "/schedule", label: "Study Schedule", icon: Calendar, color: "bg-orange-600" },
+    ];
+
+    return (
+        <div className="max-w-4xl">
+            <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
+            <p className="text-gray-400 mb-8">MSc AI — University of Edinburgh, September 2026</p>
+
+            {/* quick links */}
+            <div className="grid grid-cols-3 gap-4 mb-10">
+                {quickLinks.map(({ href, label, icon: Icon, color }) => (
+                    <Link
+                        key={href}
+                        href={href}
+                        className="bg-gray-800 hover:bg-gray-750 rounded-xl p-5 flex items-center gap-4 transition-colors"
+                    >
+                        <div className={`${color} p-3 rounded-lg`}>
+                            <Icon size={20} />
+                        </div>
+                        <span className="font-medium">{label}</span>
+                    </Link>
+                ))}
+            </div>
+
+            {/* topics overview */}
+            <h2 className="text-lg font-semibold mb-4">Your Topics</h2>
+            {topics.length === 0 ? (
+                <div className="bg-gray-800 rounded-xl p-8 text-center">
+                    <p className="text-gray-400 mb-4">No topics yet</p>
+                    <Link href="/topics" className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg">
+                        Add a Topic
+                    </Link>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-3">
+                    {topics.map(t => (
+                        <div key={t.id} className="bg-gray-800 rounded-xl p-5 flex items-center gap-4">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <h3 className="font-semibold">{t.name}</h3>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${priorityColor(t.priority)}`}>
+                                        {priorityLabel(t.priority)}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-400">
+                                    {subtopicCounts[t.id] ?? 0} subtopics · {chunkCounts[t.id] ?? 0} chunks indexed
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <Link href="/chat" className="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg text-sm">
+                                    Ask
+                                </Link>
+                                <Link href="/quiz" className="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg text-sm">
+                                    Quiz
+                                </Link>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    );
 }

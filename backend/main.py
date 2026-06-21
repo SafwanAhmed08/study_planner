@@ -186,16 +186,20 @@ def quiz(request: QuizRequest,db:Session = Depends(get_db)):
         raise HTTPException(status_code=503, detail=str(e))
     
 class FlashRequest(BaseModel):
-    topic : str
-    num: int = 5
+    subtopic_id : int
+    count: int = 5
     
 @app.post("/flashcards")
-def flashcards(request:FlashRequest):
+def flashcards(request: FlashRequest, db: Session = Depends(get_db)):
     try:
-        result = generate_flashcards(request.topic,request.num)
-        return {"flashcards":result}
+        subtopic = db.query(Subtopic).filter(Subtopic.id == request.subtopic_id).first()
+        if not subtopic:
+            raise HTTPException(status_code=404, detail="Subtopic not found")
+
+        result = generate_flashcards(subtopic.name, subtopic.topic_id, request.count)
+        return {"flashcards": result}
     except Exception as e:
-        raise HTTPException(status_code=503, detail = str(e))
+        raise HTTPException(status_code=503, detail=str(e))
     
 #creates a schema for incoming JSON
 class TopicRequest(BaseModel):
