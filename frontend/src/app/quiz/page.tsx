@@ -58,7 +58,7 @@ export default function QuizPage() {
         !numQuestions.trim() ||
         !/^\d+$/.test(numQuestions.trim()) ||
         questionCount < 1 ||
-        questionCount > 5;
+        questionCount > 10;
 
     const handleGenerate = async () => {
         if (!subtopicId || invalidQuestionCount) return;
@@ -72,6 +72,7 @@ export default function QuizPage() {
                 subtopic_id: subtopicId,
                 num_questions: questionCount
             });
+            console.log(data.quiz);
             setQuestions(data.quiz);
         } catch (e) {
             console.error(e);
@@ -157,7 +158,7 @@ export default function QuizPage() {
                         <div key={i} className="bg-gray-800 rounded-lg p-5">
                             <p className="font-medium mb-4">{i + 1}. {q.question}</p>
 
-                            {q.type === "mcq" && q.options ? (
+                            {q.options && q.options.length>0 ? (
                                 <div className="flex flex-col gap-2">
                                     {q.options.map((opt, j) => (
                                         <button
