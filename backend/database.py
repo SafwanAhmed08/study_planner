@@ -1,7 +1,7 @@
 #sqllite is just a file on ypur disk, unlike MySQL which runs as a server, makes it more lightweight to run
 #SQLalchemy allows you to run SQL without basic SQL commands like INSERT INTO, it instead uses Python objects. 
 #import database utilities
-from sqlalchemy import create_engine, Column, String, Integer, ForeignKey
+from sqlalchemy import create_engine, Column, String, Integer, ForeignKey, Boolean, Float
 #ORM - Object Relational Mapper => Python object <=> DB row
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -33,7 +33,6 @@ class Subtopic(Base):
     name = Column(String, nullable = False)
     topic_id = Column(Integer,ForeignKey("topics.id"))
 
-
 class Document(Base):
     __tablename__ = "documents"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -41,6 +40,15 @@ class Document(Base):
     topic_id = Column(Integer,ForeignKey("topics.id"))
     subtopic_id = Column(Integer,ForeignKey("subtopics.id"))
 
+class ScheduleItem(Base):
+    __tablename__ = "schedule_items"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    week = Column(Integer, nullable=False)
+    day = Column(String, nullable=False)
+    topic = Column(String, nullable=False)
+    hours = Column(Float, nullable=False)
+    session_type = Column(String, nullable=False)
+    completed = Column(Boolean, default=False)
 
 def init_db():
     #creates a database conversation, w/o this everything is saved only in memory
@@ -57,3 +65,4 @@ def get_db():
     finally:
         #closes connection
         db.close()
+

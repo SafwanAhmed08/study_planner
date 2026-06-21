@@ -4,7 +4,7 @@ from ai import clarifier, generate_quiz, generate_flashcards, generate_schedule,
 import shutil
 from scripts.ingestion import ingest, extract_text
 from pathlib import Path
-from database import init_db, get_db, Topic as TopicModel, Subtopic, Document
+from database import init_db, get_db, Topic as TopicModel, Subtopic, Document, ScheduleItem
 from sqlalchemy.orm import Session
 from typing import List #for uploading folder
 from fastapi.middleware.cors import CORSMiddleware
@@ -243,10 +243,37 @@ def schedule(request: ScheduleRequest, db: Session = Depends(get_db)):
                         ]
                         } for t in topics]
         result = generate_schedule(topics_list, request.hours_per_day, request.start, request.end)
+
+        for item in result:
+            si = ScheduleItem(
+                week = item.get("week",1),
+                day = item.get("day",""),
+                topic = item.get("topic",""),
+                hours = item.get("hours",1),
+                session_type = item.get("session_type","")
+            )
+            db.add(si)
+        db.commit()
+
         return {"schedule":result}
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
     
+@app.get("/schedule")
+def get_schedule(db:Session = Depends(get_db)):
+    items = db.query(ScheduleItem).all()
+    return {"schedule":[
+        {
+            "id":i.id,
+            "week":i.week,
+            "day": i.day,
+            "topics": i.topics,
+            "hours":i.hours,
+            "session_type":i.session_type,
+            "completed":i.completed      
+        }
+        for i in items
+    ]}
 
 @app.get("/subtopics/{topic_id}")
 def get_subtopics(topic_id: int, db: Session = Depends(get_db)):
@@ -255,3 +282,12 @@ def get_subtopics(topic_id: int, db: Session = Depends(get_db)):
         "topic_id": topic_id,
         "subtopics": [{"id": s.id, "name": s.name} for s in subtopics]
     }
+
+@app.patch("/schedule/{item_id}/complete")
+def complete_item(item_id: int, db: Session = Depends(get_db)):
+    item = db.query(ScheduleItem).filter(ScheduleItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    item.completed = True
+    db.commit()
+    return {"completed": True}
