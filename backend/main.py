@@ -267,7 +267,7 @@ def get_schedule(db:Session = Depends(get_db)):
             "id":i.id,
             "week":i.week,
             "day": i.day,
-            "topics": i.topics,
+            "topic": i.topic,
             "hours":i.hours,
             "session_type":i.session_type,
             "completed":i.completed      

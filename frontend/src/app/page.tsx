@@ -75,7 +75,7 @@ export default function Dashboard() {
     return (
         <div className="max-w-4xl">
             <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
-            <p className="text-gray-400 mb-8">MSc AI — University of Edinburgh, September 2026</p>
+            {/* <p className="text-gray-400 mb-8">MSc AI — University of Edinburgh, September 2026</p> */}
 
             {/* quick links */}
             <div className="grid grid-cols-3 gap-4 mb-10">
