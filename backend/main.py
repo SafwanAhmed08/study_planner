@@ -291,3 +291,4 @@ def complete_item(item_id: int, db: Session = Depends(get_db)):
     item.completed = True
     db.commit()
     return {"completed": True}
+

@@ -16,8 +16,20 @@ type Subtopic = {
     topic_id: number;
 }
 
+type ScheduleItem = {
+    id: number;
+    week: number;
+    day: string;
+    topic: string;
+    hours: number;
+    session_type: string;
+    completed: boolean;
+}
+
+
 export default function Dashboard() {
     const [topics, setTopics] = useState<Topic[]>([]);
+    const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
     const [subtopicCounts, setSubtopicCounts] = useState<Record<number, number>>({});
     const [chunkCounts, setChunkCounts] = useState<Record<number, number>>({});
 
@@ -29,6 +41,9 @@ export default function Dashboard() {
         const { data: topicsData } = await axios.get("http://localhost:8000/topics");
         setTopics(topicsData);
 
+        const { data: scheduleData } = await axios.get("http://localhost:8000/schedule");
+        setSchedule(scheduleData.schedule);
+
         // fetch subtopic counts per topic
         const counts: Record<number, number> = {};
         const chunks: Record<number, number> = {};
@@ -37,8 +52,8 @@ export default function Dashboard() {
             const { data: sub } = await axios.get(`http://localhost:8000/subtopics/${t.id}`);
             counts[t.id] = sub.subtopics.length;
 
-            const { data: chunkData } = await axios.get(`http://localhost:8000/chunks/${t.id}`);
-            chunks[t.id] = chunkData.chunk_count;
+            // const { data: chunkData } = await axios.get(`http://localhost:8000/chunks/${t.id}`);
+            // chunks[t.id] = chunkData.chunk_count;
         }));
 
         setSubtopicCounts(counts);
@@ -114,6 +129,52 @@ export default function Dashboard() {
                     ))}
                 </div>
             )}
+        <h2 className="text-lg font-semibold mb-4 mt-10">Upcoming Sessions</h2>
+            {schedule.length === 0 ? (
+                <div className="bg-gray-800 rounded-xl p-8 text-center">
+                    <p className="text-gray-400 mb-4">No schedule yet</p>
+                    <Link href="/schedule" className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg">
+                        Generate Schedule
+                    </Link>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-2">
+                    {schedule.slice(0, 7).map(item => (
+                        <div key={item.id} className={`bg-gray-800 rounded-xl p-4 flex items-center gap-4 ${item.completed ? "opacity-50" : ""}`}>
+                            <div className="w-24 text-sm text-gray-400 shrink-0">
+                                Week {item.week} · {item.day}
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-medium">{item.topic}</p>
+                                <p className="text-sm text-gray-400">{item.hours} hrs</p>
+                            </div>
+                            <span className={`text-xs px-3 py-1 rounded-full ${
+                                item.session_type === "study" ? "bg-blue-600" :
+                                item.session_type === "review" ? "bg-yellow-600" :
+                                "bg-purple-600"
+                            }`}>
+                                {item.session_type}
+                            </span>
+                            {!item.completed && (
+                                <button
+                                    onClick={async () => {
+                                        await axios.patch(`http://localhost:8000/schedule/${item.id}/complete`);
+                                        fetchData();
+                                    }}
+                                    className="bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg text-sm"
+                                >
+                                    Done
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                    {schedule.length > 7 && (
+                        <Link href="/schedule" className="text-center text-gray-400 hover:text-white text-sm py-2">
+                            View all {schedule.length} sessions →
+                        </Link>
+                    )}
+                </div>
+            )}   
         </div>
     );
 }
