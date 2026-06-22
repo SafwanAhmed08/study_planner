@@ -233,6 +233,9 @@ class ScheduleRequest(BaseModel):
 @app.post("/schedule")
 def schedule(request: ScheduleRequest, db: Session = Depends(get_db)):
     try:
+        # clear existing schedule
+        db.query(ScheduleItem).delete()
+        db.commit()
         topics = db.query(TopicModel).all()
         if not topics:
             raise HTTPException(status_code=400, detail="No topics found. Add topics first")

@@ -20,6 +20,11 @@ export default function SchedulePage() {
 
     const handleGenerate = async () => {
         if (!startDate || !endDate) return;
+        
+        if (schedule.length > 0) {
+            const confirm = window.confirm("A schedule already exists. Do you want to overwrite it?");
+            if (!confirm) return;
+        }
         setLoading(true);
         setSchedule([]);
 
