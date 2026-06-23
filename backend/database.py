@@ -66,3 +66,11 @@ def get_db():
         #closes connection
         db.close()
 
+class Prerequisite(Base):
+    __tablename__ = "prerequisites"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    category = Column(String, nullable=False)  # maths | programming | ml | other
+    completed = Column(Boolean, default=False)
+
