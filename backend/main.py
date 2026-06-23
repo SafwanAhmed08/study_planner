@@ -295,3 +295,24 @@ def complete_item(item_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"completed": True}
 
+class SubtopicRequest(BaseModel):
+    name: str
+    topic_id: int
+
+@app.post("/subtopics")
+def add_subtopic(request: SubtopicRequest, db: Session = Depends(get_db)):
+    subtopic = Subtopic(name=request.name, topic_id=request.topic_id)
+    db.add(subtopic)
+    db.commit()
+    db.refresh(subtopic)
+    return {"id": subtopic.id, "name": subtopic.name, "topic_id": subtopic.topic_id}
+
+
+@app.delete("/subtopics/{subtopic_id}")
+def delete_subtopic(subtopic_id: int, db: Session = Depends(get_db)):
+    subtopic = db.query(Subtopic).filter(Subtopic.id == subtopic_id).first()
+    if not subtopic:
+        raise HTTPException(status_code=404, detail="Subtopic not found")
+    db.delete(subtopic)
+    db.commit()
+    return {"deleted": subtopic_id}

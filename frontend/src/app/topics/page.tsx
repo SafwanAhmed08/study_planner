@@ -12,6 +12,11 @@ type Topic = {
     priority: number;
 }
 
+type Subtopic = {
+    id: number;
+    name: string;
+}
+
 export default  function TopicsPage(){
     const [topics, setTopics] = useState<Topic[]>([]);
     // creates state for the list of topics, initiially empty. Topic[] => array of Topic objects, setTopics will update the list
@@ -40,6 +45,30 @@ export default  function TopicsPage(){
         setName("");
         setPriority(1);
         await fetchTopics();
+    };
+
+    const [newSubtopic, setNewSubtopic] = useState<Record<number, string>>({});
+    const [subtopics, setSubtopics] = useState<Record<number, Subtopic[]>>({});
+
+    useEffect(() => {
+        fetchTopics();
+    }, []);
+
+    const fetchSubtopics = async (topicId: number) => {
+        const { data } = await axios.get(`http://localhost:8000/subtopics/${topicId}`);
+        setSubtopics(prev => ({ ...prev, [topicId]: data.subtopics }));
+    };
+
+    const handleAddSubtopic = async (topicId: number) => {
+        const name = newSubtopic[topicId]?.trim();
+        if (!name) return;
+        await axios.post("http://localhost:8000/subtopics", {
+            name,
+            topic_id: topicId
+        });
+        setNewSubtopic(prev => ({ ...prev, [topicId]: "" }));
+        await fetchSubtopics(topicId);
+        // refresh subtopics
     };
     
     return (
@@ -75,7 +104,8 @@ export default  function TopicsPage(){
             <div className="flex flex-col gap-3">
                 {topics.map(topic => (
                     <div key={topic.id} className="bg-gray-800 rounded-lg p-4">
-                        <div className="flex justify-between items-center">
+                        {/* topic header */}
+                        <div className="flex justify-between items-center mb-3">
                             <h2 className="font-semibold">{topic.name}</h2>
                             <span className={`text-sm px-2 py-1 rounded-full ${
                                 topic.priority === 3 ? "bg-red-600" :
@@ -85,6 +115,34 @@ export default  function TopicsPage(){
                                 {topic.priority === 3 ? "High" :
                                  topic.priority === 2 ? "Medium" : "Low"}
                             </span>
+                        </div>
+
+                        {/* existing subtopics */}
+                        {(subtopics[topic.id] ?? []).length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-3">
+                                {(subtopics[topic.id] ?? []).map(s => (
+                                    <span key={s.id} className="bg-gray-700 text-sm px-2 py-1 rounded-full">
+                                        {s.name}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* add subtopic */}
+                        <div className="flex gap-2">
+                            <input
+                                value={newSubtopic[topic.id] ?? ""}
+                                onChange={e => setNewSubtopic(prev => ({ ...prev, [topic.id]: e.target.value }))}
+                                onKeyDown={e => e.key === "Enter" && handleAddSubtopic(topic.id)}
+                                placeholder="Add subtopic..."
+                                className="flex-1 bg-gray-700 rounded-lg px-3 py-1.5 text-sm outline-none"
+                            />
+                            <button
+                                onClick={() => handleAddSubtopic(topic.id)}
+                                className="bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg text-sm"
+                            >
+                                Add
+                            </button>
                         </div>
                     </div>
                 ))}
