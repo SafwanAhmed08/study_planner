@@ -24,14 +24,28 @@ export default  function TopicsPage(){
     //stores the value currently types in the topic name input
     const [priority, setPriority] = useState(1);
     //stores selected priority, 1 = low, 2 = medium, 3 = high
+
+    const [newSubtopic, setNewSubtopic] = useState<Record<number, string>>({});
+    const [subtopics, setSubtopics] = useState<Record<number, Subtopic[]>>({});
+
+    //stores whether subtopics are visible or hidden for each topic
+    const [showSubtopics, setShowSubtopics] = useState<Record<number, boolean>>({});
+
     useEffect(() => {
         fetchTopics();
     },[]);
+
     //fetch topics when page loads, async because http takes time
-    const fetchTopics = async() =>{
-        const {data} = await axios.get("http://localhost:8000/topics");
+    const fetchTopics = async () => {
+        const { data } = await axios.get("http://localhost:8000/topics");
         setTopics(data);
-    }
+        await Promise.all(data.map((t: Topic) => fetchSubtopics(t.id)));
+    };
+
+    const fetchSubtopics = async (topicId: number) => {
+        const { data } = await axios.get(`http://localhost:8000/subtopics/${topicId}`);
+        setSubtopics(prev => ({ ...prev, [topicId]: data.subtopics }));
+    };
 
     //runs when the user clicks on add. name.trim() prevents empty topics
     const handleAdd = async() =>{
@@ -45,18 +59,6 @@ export default  function TopicsPage(){
         setName("");
         setPriority(1);
         await fetchTopics();
-    };
-
-    const [newSubtopic, setNewSubtopic] = useState<Record<number, string>>({});
-    const [subtopics, setSubtopics] = useState<Record<number, Subtopic[]>>({});
-
-    useEffect(() => {
-        fetchTopics();
-    }, []);
-
-    const fetchSubtopics = async (topicId: number) => {
-        const { data } = await axios.get(`http://localhost:8000/subtopics/${topicId}`);
-        setSubtopics(prev => ({ ...prev, [topicId]: data.subtopics }));
     };
 
     const handleAddSubtopic = async (topicId: number) => {
@@ -102,50 +104,104 @@ export default  function TopicsPage(){
 
             {/* topics list */}
             <div className="flex flex-col gap-3">
-                {topics.map(topic => (
-                    <div key={topic.id} className="bg-gray-800 rounded-lg p-4">
-                        {/* topic header */}
-                        <div className="flex justify-between items-center mb-3">
-                            <h2 className="font-semibold">{topic.name}</h2>
-                            <span className={`text-sm px-2 py-1 rounded-full ${
-                                topic.priority === 3 ? "bg-red-600" :
-                                topic.priority === 2 ? "bg-yellow-600" :
-                                "bg-green-600"
-                            }`}>
-                                {topic.priority === 3 ? "High" :
-                                 topic.priority === 2 ? "Medium" : "Low"}
-                            </span>
-                        </div>
+                {topics.map(topic => {
+                    const topicSubtopics = subtopics[topic.id] ?? [];
+                    const isSubtopicsVisible = showSubtopics[topic.id] ?? false;
 
-                        {/* existing subtopics */}
-                        {(subtopics[topic.id] ?? []).length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-3">
-                                {(subtopics[topic.id] ?? []).map(s => (
-                                    <span key={s.id} className="bg-gray-700 text-sm px-2 py-1 rounded-full">
-                                        {s.name}
-                                    </span>
-                                ))}
+                    return (
+                        <div key={topic.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                            {/* topic header */}
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="font-semibold">{topic.name}</h2>
+                                <span className={`text-sm px-2 py-1 rounded-full ${
+                                    topic.priority === 3 ? "bg-red-600" :
+                                    topic.priority === 2 ? "bg-yellow-600" :
+                                    "bg-green-600"
+                                }`}>
+                                    {topic.priority === 3 ? "High" :
+                                     topic.priority === 2 ? "Medium" : "Low"}
+                                </span>
                             </div>
-                        )}
 
-                        {/* add subtopic */}
-                        <div className="flex gap-2">
-                            <input
-                                value={newSubtopic[topic.id] ?? ""}
-                                onChange={e => setNewSubtopic(prev => ({ ...prev, [topic.id]: e.target.value }))}
-                                onKeyDown={e => e.key === "Enter" && handleAddSubtopic(topic.id)}
-                                placeholder="Add subtopic..."
-                                className="flex-1 bg-gray-700 rounded-lg px-3 py-1.5 text-sm outline-none"
-                            />
-                            <button
-                                onClick={() => handleAddSubtopic(topic.id)}
-                                className="bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg text-sm"
-                            >
-                                Add
-                            </button>
+                            {/* existing subtopics */}
+                            <div>
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <p className="text-xs uppercase tracking-wide text-gray-400">
+                                            Subtopics
+                                        </p>
+
+                                        <span className="text-xs text-gray-500">
+                                            {topicSubtopics.length} total
+                                        </span>
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            setShowSubtopics(prev => ({
+                                                ...prev,
+                                                [topic.id]: !isSubtopicsVisible
+                                            }));
+                                        }}
+                                        className="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg"
+                                    >
+                                        {isSubtopicsVisible ? "Hide subtopics" : "View subtopics"}
+                                    </button>
+                                </div>
+
+                                {isSubtopicsVisible && (
+                                    <div className="mt-3">
+                                        {topicSubtopics.length > 0 ? (
+                                            <div className="flex flex-wrap gap-2 mb-4">
+                                                {topicSubtopics.map(s => (
+                                                    <span
+                                                        key={s.id}
+                                                        className="bg-gray-700 hover:bg-gray-600 text-sm px-3 py-1.5 rounded-lg flex items-start gap-2 max-w-full"
+                                                    >
+                                                        <span className="break-words whitespace-normal">
+                                                            {s.name}
+                                                        </span>
+
+                                                        <button
+                                                            onClick={async () => {
+                                                                await axios.delete(`http://localhost:8000/subtopics/${s.id}`);
+                                                                await fetchSubtopics(topic.id);
+                                                            }}
+                                                            className="text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-full w-5 h-5 flex items-center justify-center leading-none shrink-0"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-gray-500 bg-gray-900/40 border border-dashed border-gray-700 rounded-lg px-3 py-2 mb-4">
+                                                No subtopics yet. Add one below.
+                                            </p>
+                                        )}
+
+                                        {/* add subtopic */}
+                                        <div className="flex gap-2 pt-3 border-t border-gray-700">
+                                            <input
+                                                value={newSubtopic[topic.id] ?? ""}
+                                                onChange={e => setNewSubtopic(prev => ({ ...prev, [topic.id]: e.target.value }))}
+                                                onKeyDown={e => e.key === "Enter" && handleAddSubtopic(topic.id)}
+                                                placeholder="Add subtopic..."
+                                                className="flex-1 bg-gray-700 rounded-lg px-3 py-1.5 text-sm outline-none"
+                                            />
+                                            <button
+                                                onClick={() => handleAddSubtopic(topic.id)}
+                                                className="bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg text-sm"
+                                            >
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
