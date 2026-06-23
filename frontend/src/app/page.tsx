@@ -73,7 +73,7 @@ export default function Dashboard() {
     ];
 
     return (
-        <div className="max-w-4xl">
+        <div>
             <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
             {/* <p className="text-gray-400 mb-8">MSc AI — University of Edinburgh, September 2026</p> */}
 

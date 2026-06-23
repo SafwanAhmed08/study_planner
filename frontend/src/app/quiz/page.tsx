@@ -97,7 +97,7 @@ export default function QuizPage() {
     };
 
     return (
-        <div className="max-w-3xl">
+        <div>
             <h1 className="text-2xl font-bold mb-6">Quiz</h1>
 
             {/* controls */}

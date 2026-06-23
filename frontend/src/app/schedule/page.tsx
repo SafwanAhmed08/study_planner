@@ -61,7 +61,7 @@ export default function SchedulePage() {
     };
 
     return (
-        <div className="max-w-4xl">
+        <div>
             <h1 className="text-2xl font-bold mb-6">Study Schedule</h1>
 
             {/* controls */}

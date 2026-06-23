@@ -52,7 +52,7 @@ export default function UploadPage(){
     };
 
     return (
-        <div className="max-w-2xl">
+        <div>
             <h1 className="text-2xl font-bold mb-6">Upload Material</h1>
 
             {/* topic selector */}
