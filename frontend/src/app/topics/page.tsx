@@ -158,7 +158,7 @@ export default  function TopicsPage(){
                                                         key={s.id}
                                                         className="bg-gray-700 hover:bg-gray-600 text-sm px-3 py-1.5 rounded-lg flex items-start gap-2 max-w-full"
                                                     >
-                                                        <span className="break-words whitespace-normal">
+                                                        <span className="wrap-break-word whitespace-normal">
                                                             {s.name}
                                                         </span>
 
