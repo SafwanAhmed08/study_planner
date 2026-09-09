@@ -1,10 +1,10 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Form
 from pydantic import BaseModel  # used to ensure the data srnt by frontend is in the right shape
-from ai import clarifier, generate_quiz, generate_flashcards, generate_schedule, detect_subtopics, extract_prerequisites
+from ai import clarifier, generate_quiz, generate_flashcards, generate_schedule, detect_subtopics
 import shutil
 from scripts.ingestion import ingest, extract_text
 from pathlib import Path
-from database import init_db, get_db, Topic as TopicModel, Subtopic, Document, ScheduleItem, Prerequisite
+from database import init_db, get_db, Topic as TopicModel, Subtopic, Document, ScheduleItem
 from sqlalchemy.orm import Session
 from typing import List #for uploading folder
 from fastapi.middleware.cors import CORSMiddleware
@@ -317,83 +317,3 @@ def delete_subtopic(subtopic_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"deleted": subtopic_id}
 
-
-# --- Prerequisites ---
-
-class PrerequisiteCreate(BaseModel):
-    name: str
-    description: str | None = None
-    category: str = "other"
-    topic_ids: list[int] = []
-
-class PrerequisiteExtract(BaseModel):
-    text: str
-
-@app.post("/prerequisites/extract")
-def extract_prereqs(request: PrerequisiteExtract, db: Session = Depends(get_db)):
-    try:
-        prereqs = extract_prerequisites(request.text)
-        saved = []
-        for p in prereqs:
-            prereq = Prerequisite(
-                name=p["name"],
-                description=p.get("description"),
-                category=p.get("category", "other")
-            )
-            db.add(prereq)
-            saved.append(prereq)
-        db.commit()
-        return {"prerequisites": [{"name": p.name, "category": p.category} for p in saved]}
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=str(e))
-
-
-@app.post("/prerequisites")
-def add_prerequisite(request: PrerequisiteCreate, db: Session = Depends(get_db)):
-    prereq = Prerequisite(
-        name=request.name,
-        description=request.description,
-        category=request.category
-    )
-    db.add(prereq)
-    db.flush()
-
-    db.commit()
-    db.refresh(prereq)
-    return {"id": prereq.id, "name": prereq.name, "description": prereq.description, "category": prereq.category}
-
-
-@app.get("/prerequisites")
-def get_prerequisites(db: Session = Depends(get_db)):
-    prereqs = db.query(Prerequisite).all()
-    result = [
-        {
-            "id": p.id,
-            "name": p.name,
-            "description": p.description,
-            "category": p.category,
-            "completed": p.completed,
-        }
-        for p in prereqs
-    ]
-    return {"prerequisites": result}
-
-
-@app.patch("/prerequisites/{prereq_id}/complete")
-def complete_prerequisite(prereq_id: int, db: Session = Depends(get_db)):
-    prereq = db.query(Prerequisite).filter(Prerequisite.id == prereq_id).first()
-    if not prereq:
-        raise HTTPException(status_code=404, detail="Prerequisite not found")
-    prereq.completed = not prereq.completed  # toggle
-    db.commit()
-    return {"id": prereq_id, "completed": prereq.completed}
-
-
-@app.delete("/prerequisites/{prereq_id}")
-def delete_prerequisite(prereq_id: int, db: Session = Depends(get_db)):
-    prereq = db.query(Prerequisite).filter(Prerequisite.id == prereq_id).first()
-    if not prereq:
-        raise HTTPException(status_code=404, detail="Prerequisite not found")
-    db.delete(prereq)
-    db.commit()
-    return {"deleted": prereq_id}

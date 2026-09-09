@@ -23,8 +23,7 @@ const links = [
     { href: "/chat", label: "Chat", icon: MessageSquare},
     { href: "/quiz", label: "Quiz", icon: Brain},
     { href: "/flashcards", label: "Flashcards", icon: CreditCard},
-    { href: "/schedule", label: "Schedule", icon: BookOpen},
-    { href: "/prerequisites", label: "Prerequisites", icon: BookOpen}
+    { href: "/schedule", label: "Schedule", icon: BookOpen}
 ];
 //array storing all links since this is the sidebar
 // href /, text shown dhasboard, icon Layout Dashboard
