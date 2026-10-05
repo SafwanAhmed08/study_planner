@@ -1,13 +1,12 @@
 import chromadb
 import requests
 from sentence_transformers import CrossEncoder
+from config import CHROMA_PATH
 
 reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
-DATA_PATH = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
 
-
-client = chromadb.PersistentClient(path = f"{DATA_PATH}/chroma")
+client = chromadb.PersistentClient(path = f"{CHROMA_PATH}")
 collection = client.get_or_create_collection("Study_materials")
 
 #Basic retrieval didnt work so switched to HyDE- Hypothetical Document Embeddings. 

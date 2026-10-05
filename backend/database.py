@@ -4,9 +4,9 @@
 from sqlalchemy import create_engine, Column, String, Integer, ForeignKey, Boolean, Float
 #ORM - Object Relational Mapper => Python object <=> DB row
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from config import DATABASE_PATH
 
-BASE = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
-DB = f"sqlite:///{BASE}/study_planner.db"
+DB = f"sqlite:///{DATABASE_PATH}"
 #create engine is used to create a connection to the database. "sqlite:///" means you are using SQlite and ./data/study_planner.db is the file name
 engine = create_engine(DB)
 #creates a session factory, A session is how you talk to the database
