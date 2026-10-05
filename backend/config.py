@@ -1,8 +1,9 @@
 import os 
 from pathlib import Path
 
-DATA_PATH = Path(os.get("DATA_PATH", Path(__file__).parent.parent/ "data"))
-DATA_PATH.mkdir(parents=True, exist_ok=True)
+DATA_PATH = Path(
+    os.getenv("DATA_PATH", Path(__file__).parent.parent / "data")
+)
 
 UPLOADS_PATH = DATA_PATH / "uploads"
 CHROMA_PATH = DATA_PATH / "chroma"

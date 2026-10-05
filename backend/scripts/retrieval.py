@@ -1,5 +1,4 @@
 import chromadb
-import requests
 from sentence_transformers import CrossEncoder
 from config import CHROMA_PATH
 
