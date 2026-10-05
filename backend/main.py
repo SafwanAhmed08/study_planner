@@ -8,10 +8,13 @@ from database import init_db, get_db, Topic as TopicModel, Subtopic, Document, S
 from sqlalchemy.orm import Session
 from typing import List #for uploading folder
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 
+DATA_PATH = Path(os.get("DATA_PATH", Path(__file__).parent.parent/ "data"))
+DATA_PATH.mkdir(parents=True, exist_ok=True)
 
-DATA_PATH = "/Users/safwanahmed/Desktop/Projects/study_planner/data"
+
 #create fast api instance
 app = FastAPI()
 # needed because browser blocks requests from different ports. 
@@ -34,7 +37,7 @@ class Query(BaseModel):
 
 #defines it as a post function
 @app.post("/ask")
-#the query: Query, automatically pases the body into Query object
+# query: Query automatically pases the body into Query object
 def ask(query: Query, db: Session = Depends(get_db)):
     try:
         #pulls the q from Query object and passes it to clarifier
@@ -47,7 +50,7 @@ def ask(query: Query, db: Session = Depends(get_db)):
 #file: UploadFile - File(..) is a FastAPI special type which tells the framework to expect a file upload, it is highly efficient because it streams the incoming file. the Elepsis (...) tells that this file is strictly required and if its not provided, returns 422
 def upload(file: UploadFile = File(...), topic_id: int = Form(...), db: Session = Depends(get_db)):
     # uses pathlib to create the directory
-    save_path = Path(f"{DATA_PATH}/uploads") / file.filename
+    save_path = DATA_PATH/"uploads" / file.filename
     #parents = True means if the parent folders dont exist, create that as well
     save_path.parent.mkdir(parents = True,exist_ok=True)
     #opens a new empty file at the path in write binary mode. 
@@ -83,7 +86,6 @@ def upload(file: UploadFile = File(...), topic_id: int = Form(...), db: Session 
         "chunks": result["chunks"]
     }
 
-@app.post("/uploadFolder")
 @app.post("/uploadFolder")
 def uploadFolder(
     files: List[UploadFile] = File(...),
