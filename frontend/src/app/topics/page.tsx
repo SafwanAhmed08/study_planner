@@ -1,6 +1,6 @@
 "use client";
 import {useState, useEffect} from "react";
-import axios from "axios";
+import { api } from "@/lib/api";
 
 //overall when page loads, fetch topics from fastapi backend, show them in a list
 // when user types topic, selects priority and clicks add = send topic to fastapi backend, clear form, fetch updated topics again
@@ -37,13 +37,13 @@ export default  function TopicsPage(){
 
     //fetch topics when page loads, async because http takes time
     const fetchTopics = async () => {
-        const { data } = await axios.get("http://localhost:8000/topics");
+        const { data } = await api.get("/topics");
         setTopics(data);
         await Promise.all(data.map((t: Topic) => fetchSubtopics(t.id)));
     };
 
     const fetchSubtopics = async (topicId: number) => {
-        const { data } = await axios.get(`http://localhost:8000/subtopics/${topicId}`);
+        const { data } = await api.get(`/subtopics/${topicId}`);
         setSubtopics(prev => ({ ...prev, [topicId]: data.subtopics }));
     };
 
@@ -51,7 +51,7 @@ export default  function TopicsPage(){
     const handleAdd = async() =>{
         if(!name.trim()) return;
         //send post to fastapi
-        await axios.post("http://localhost:8000/topics",{
+        await api.post("/topics",{
             name,
             priority
         });
@@ -64,7 +64,7 @@ export default  function TopicsPage(){
     const handleAddSubtopic = async (topicId: number) => {
         const name = newSubtopic[topicId]?.trim();
         if (!name) return;
-        await axios.post("http://localhost:8000/subtopics", {
+        await api.post("/subtopics", {
             name,
             topic_id: topicId
         });
@@ -164,7 +164,7 @@ export default  function TopicsPage(){
 
                                                         <button
                                                             onClick={async () => {
-                                                                await axios.delete(`http://localhost:8000/subtopics/${s.id}`);
+                                                                await api.delete(`/subtopics/${s.id}`);
                                                                 await fetchSubtopics(topic.id);
                                                             }}
                                                             className="text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-full w-5 h-5 flex items-center justify-center leading-none shrink-0"

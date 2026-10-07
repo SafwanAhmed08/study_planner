@@ -1,8 +1,9 @@
 import requests
 import json
 from scripts.retrieval import retrieval
+from config import LLM_BASE_URL
 
-url = "http://localhost:1234/v1/chat/completions"
+url = LLM_BASE_URL
 
 headers ={
         "Content-Type":"application/json"

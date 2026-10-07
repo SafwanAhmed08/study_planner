@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "@/lib/api";
 
 type Topic = {
     id: number;
@@ -27,7 +27,7 @@ export default function UploadPage(){
     }, []);
 
     const fetchTopics = async () => {
-        const { data } = await axios.get("http://localhost:8000/topics");
+        const { data } = await api.get("/topics");
         setTopics(data);
         if (data.length > 0) setTopicId(data[0].id);
     };   
@@ -42,7 +42,7 @@ export default function UploadPage(){
         files.forEach(file => formData.append("files", file));
 
         try {
-            const { data } = await axios.post("http://localhost:8000/uploadFolder", formData);
+            const { data } = await api.post("/uploadFolder", formData);
             setResults(data.results);
         } catch (e) {
             console.error(e);

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "@/lib/api";
 import Link from "next/link";
 import { BookOpen, Upload, MessageSquare, Brain, CreditCard, Calendar } from "lucide-react";
 
@@ -38,10 +38,10 @@ export default function Dashboard() {
     }, []);
 
     const fetchData = async () => {
-        const { data: topicsData } = await axios.get("http://localhost:8000/topics");
+        const { data: topicsData } = await api.get("/topics");
         setTopics(topicsData);
 
-        const { data: scheduleData } = await axios.get("http://localhost:8000/schedule");
+        const { data: scheduleData } = await api.get("/schedule");
         setSchedule(scheduleData.schedule);
 
         // fetch subtopic counts per topic
@@ -49,10 +49,10 @@ export default function Dashboard() {
         const chunks: Record<number, number> = {};
 
         await Promise.all(topicsData.map(async (t: Topic) => {
-            const { data: sub } = await axios.get(`http://localhost:8000/subtopics/${t.id}`);
+            const { data: sub } = await api.get(`/subtopics/${t.id}`);
             counts[t.id] = sub.subtopics.length;
 
-            // const { data: chunkData } = await axios.get(`http://localhost:8000/chunks/${t.id}`);
+            // const { data: chunkData } = await api.get(`/chunks/${t.id}`);
             // chunks[t.id] = chunkData.chunk_count;
         }));
 
@@ -158,7 +158,7 @@ export default function Dashboard() {
                             {!item.completed && (
                                 <button
                                     onClick={async () => {
-                                        await axios.patch(`http://localhost:8000/schedule/${item.id}/complete`);
+                                        await api.patch(`/schedule/${item.id}/complete`);
                                         fetchData();
                                     }}
                                     className="bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg text-sm"

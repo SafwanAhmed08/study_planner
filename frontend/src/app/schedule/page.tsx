@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "@/lib/api";
 
 type ScheduleItem = {
     week: number;
@@ -29,7 +29,7 @@ export default function SchedulePage() {
         setSchedule([]);
 
         try {
-            const { data } = await axios.post("http://localhost:8000/schedule", {
+            const { data } = await api.post("/schedule", {
                 hours_per_day: hoursPerDay,
                 start: startDate,
                 end: endDate

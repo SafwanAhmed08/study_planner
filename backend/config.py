@@ -19,3 +19,9 @@ FRONTEND_ORIGIN = os.getenv(
     "FRONTEND_ORIGIN",
     "http://localhost:3000"
 )
+
+
+LLM_BASE_URL = os.getenv(
+    "LLM_BASE_URL",
+    "http://localhost:1234/v1/chat/completions",
+)

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import { api } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -32,7 +32,7 @@ export default function AskPage() {
     }, [messages]);
 
     const fetchTopics = async () => {
-        const { data } = await axios.get("http://localhost:8000/topics");
+        const { data } = await api.get("/topics");
         setTopics(data);
         if (data.length > 0) setTopicId(data[0].id);
     };
@@ -46,7 +46,7 @@ export default function AskPage() {
         setLoading(true);
 
         try {
-            const { data } = await axios.post("http://localhost:8000/ask", {
+            const { data } = await api.post("/ask", {
                 question,
                 topic_id: topicId
             });

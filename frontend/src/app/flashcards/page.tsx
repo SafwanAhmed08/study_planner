@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "@/lib/api";
 
 type Topic = {
     id: number;
@@ -32,13 +32,13 @@ export default function FlashcardsPage() {
     useEffect(() => { if (topicId) fetchSubtopics(topicId); }, [topicId]);
 
     const fetchTopics = async () => {
-        const { data } = await axios.get("http://localhost:8000/topics");
+        const { data } = await api.get("/topics");
         setTopics(data);
         if (data.length > 0) setTopicId(data[0].id);
     };
 
     const fetchSubtopics = async (id: number) => {
-        const { data } = await axios.get(`http://localhost:8000/subtopics/${id}`);
+        const { data } = await api.get(`/subtopics/${id}`);
         setSubtopics(data.subtopics);
         if (data.subtopics.length > 0) setSubtopicId(data.subtopics[0].id);
     };
@@ -60,7 +60,7 @@ export default function FlashcardsPage() {
         setFlipped(false);
 
         try {
-            const { data } = await axios.post("http://localhost:8000/flashcards", {
+            const { data } = await api.post("/flashcards", {
                 subtopic_id: subtopicId,
                 count: cardCount
             });
