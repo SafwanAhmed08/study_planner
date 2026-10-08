@@ -1,66 +1,261 @@
+<div align="center">
+
 # Study Planner
 
-Study Planner is an AI-assisted learning workspace for organizing study topics, indexing personal PDF material, and generating retrieval-grounded explanations, quizzes, flashcards, and study schedules.
+### A retrieval-grounded study workspace for turning your own course material into a more active learning workflow.
 
-## Overview
+<p>
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16">
+  <img src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white" alt="Python 3.14">
+  <img src="https://img.shields.io/badge/ChromaDB-vector%20storage-FF6F61" alt="ChromaDB">
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose">
+</p>
 
-Study Planner is designed for learners who want more than a conventional task or to-do list. Instead of only tracking study tasks, it connects a learner's topics and uploaded course material to an AI-assisted retrieval and generation pipeline.
+<p>
+  <a href="#-what-it-does">What it does</a> ·
+  <a href="#-how-it-works">How it works</a> ·
+  <a href="#-quick-start">Quick start</a> ·
+  <a href="#-project-structure">Project structure</a>
+</p>
 
-Users can:
+</div>
 
-- Organize subjects into prioritized topics and subtopics.
-- Upload PDF study material.
-- Ask questions about indexed material.
-- Generate quizzes and flashcards for selected subtopics.
-- Generate a schedule based on topic priorities, available daily hours, and a date range.
-- Track completed schedule sessions.
+## ✦ What it does
 
-The application is currently designed as a local, single-user project. It uses a local OpenAI-compatible LLM endpoint, such as LM Studio, rather than depending on a hosted LLM API.
+Study Planner is an AI-assisted learning application for learners who want to study from their own material rather than rely on a generic chatbot.
 
-## Features
+It combines:
 
-- Topic management with low, medium, and high priorities.
-- Manual subtopic creation, viewing, and deletion.
-- Uploading multiple PDF files or a folder of PDF files.
-- PDF text extraction with `pypdf`.
-- Duplicate document detection using SHA-256 file hashes.
-- Recursive text chunking with overlap before indexing.
-- Persistent ChromaDB storage for document chunks and embeddings.
-- Semantic document retrieval followed by cross-encoder reranking.
-- Retrieval-grounded question answering over selected study material.
-- LLM-generated multiple-choice quizzes with answers and explanations.
-- LLM-generated flashcards with question-and-answer navigation.
-- LLM-generated study schedules containing study, review, and quiz sessions.
-- Schedule persistence in SQLite.
-- Completion tracking for generated schedule items.
-- Docker Compose setup for the frontend and backend.
+- **Structured planning** — organize topics and subtopics, assign priorities, and generate a schedule around a date range and daily time budget.
+- **Personal study material** — upload one or more PDFs and index their contents for later retrieval.
+- **Active recall** — generate quizzes and flip-through flashcards for selected subtopics.
+- **Grounded Q&A** — ask questions against retrieved chunks from the material you uploaded.
+- **Persistent local data** — keep topics, schedules, indexed content, uploaded files, and model caches across Docker restarts.
 
-## Architecture
+> **Scope:** This is a local, single-user project. AI features use an OpenAI-compatible endpoint, configured by default for LM Studio running on the host machine.
 
-The project is split into a Next.js frontend and a FastAPI backend.
+## ✨ Features
 
-The frontend communicates with the backend through REST endpoints. The backend manages application data with SQLAlchemy and SQLite, processes uploaded PDFs, performs retrieval from ChromaDB, and sends generation requests to an OpenAI-compatible local LLM endpoint.
+| Area | Included |
+| --- | --- |
+| **Planning** | Prioritized topics, subtopics, date-bounded schedules, study/review/quiz sessions, completion tracking |
+| **Material ingestion** | Multi-file and folder PDF uploads, text extraction, overlapping chunking, duplicate detection with SHA-256 |
+| **Retrieval** | Persistent ChromaDB collection, semantic retrieval, cross-encoder reranking, topic-scoped search |
+| **AI study tools** | Retrieval-grounded explanations, multiple-choice quizzes, generated flashcards, schedule generation |
+| **Web experience** | Next.js dashboard with dedicated Topics, Upload, Chat, Quiz, Flashcards, and Schedule views |
+| **Portability** | Separate frontend/backend Docker images and a Docker Compose workflow |
+
+## 🧭 How it works
 
 ```mermaid
-flowchart TD
-    User[User] --> Frontend[Next.js Frontend]
-    Frontend --> API[FastAPI Backend]
+flowchart LR
+    U([Learner]) --> FE[Next.js frontend]
+    FE --> API[FastAPI REST API]
 
-    API --> Topics[Topics and Schedule API]
-    API --> Ingestion[PDF Ingestion]
-    API --> AI[AI Generation Services]
-    API --> SQLite[(SQLite Database)]
-    API --> Chroma[(Persistent ChromaDB)]
-    API --> Files[Uploaded PDF Storage]
+    API --> DB[(SQLite + SQLAlchemy)]
+    API --> PDF[PDF ingestion]
+    API --> GEN[AI generation]
 
-    Ingestion --> Extract[PDF Text Extraction]
-    Extract --> Chunk[Recursive Text Chunking]
-    Chunk --> Embed[SentenceTransformer Embeddings]
-    Embed --> Chroma
+    PDF --> TXT[Extract text]
+    TXT --> CHUNK[Split into chunks]
+    CHUNK --> EMBED[all-MiniLM-L6-v2]
+    EMBED --> VDB[(Persistent ChromaDB)]
 
-    AI --> Retrieve[Chroma Retrieval]
-    Retrieve --> Rerank[Cross-Encoder Reranking]
-    Rerank --> LLM[OpenAI-Compatible LLM Endpoint]
-
+    GEN --> SEARCH[Retrieve up to 20 chunks]
+    SEARCH --> RERANK[Cross-encoder reranking]
+    RERANK --> CONTEXT[Top 3 context chunks]
+    CONTEXT --> LLM[OpenAI-compatible LLM]
     LLM --> API
-    API --> Frontend
+```
+
+### Retrieval and generation pipeline
+
+1. A PDF is saved and identified by a SHA-256 content hash.
+2. Text is extracted with `pypdf` and split into overlapping chunks.
+3. `all-MiniLM-L6-v2` creates an embedding for each chunk.
+4. Chunks and metadata are persisted in the `Study_materials` ChromaDB collection.
+5. A question or generation request retrieves up to 20 candidate chunks.
+6. `cross-encoder/ms-marco-MiniLM-L-6-v2` reranks those candidates.
+7. The top three chunks are sent as context to the configured LLM.
+
+The same retrieval path supports study-material explanations, quiz generation, and flashcard generation. The LLM is instructed to use the supplied context rather than treat the request as unrestricted general chat.
+
+## 🧱 Tech stack
+
+<table>
+  <tr>
+    <td><strong>Frontend</strong></td>
+    <td>Next.js 16, React 19, TypeScript, Tailwind CSS, Axios, React Markdown</td>
+  </tr>
+  <tr>
+    <td><strong>Backend</strong></td>
+    <td>FastAPI, Uvicorn, Pydantic, SQLAlchemy</td>
+  </tr>
+  <tr>
+    <td><strong>AI / ML</strong></td>
+    <td>Sentence Transformers, <code>all-MiniLM-L6-v2</code>, <code>cross-encoder/ms-marco-MiniLM-L-6-v2</code>, LangChain text splitters</td>
+  </tr>
+  <tr>
+    <td><strong>Data</strong></td>
+    <td>SQLite, ChromaDB, local filesystem storage</td>
+  </tr>
+  <tr>
+    <td><strong>Infrastructure</strong></td>
+    <td>Docker, Docker Compose, persistent named volumes</td>
+  </tr>
+</table>
+
+## 🚀 Quick start
+
+### Prerequisites
+
+- Docker Desktop with Docker Compose
+- [LM Studio](https://lmstudio.ai/) or another OpenAI-compatible local LLM server
+- A chat model loaded and served by the local LLM server
+
+### 1. Start the application
+
+```bash
+git clone <repository-url>
+cd study_planner
+docker compose up --build
+```
+
+Open the application at **[http://localhost:3000](http://localhost:3000)**.
+
+The backend is available at **[http://localhost:8000](http://localhost:8000)**, with interactive API docs at **[http://localhost:8000/docs](http://localhost:8000/docs)**.
+
+### 2. Enable AI features
+
+The default Compose configuration sends requests from the backend container to:
+
+```text
+http://host.docker.internal:1234/v1/chat/completions
+```
+
+Start the local server in LM Studio and make sure it is listening on that address before using Chat, Quiz, Flashcards, or Schedule generation.
+
+> The first backend build/start may take longer while the embedding and reranking models are downloaded and cached.
+
+## ⚙️ Configuration
+
+The current Docker setup defines these variables:
+
+| Variable | Purpose | Default in Compose |
+| --- | --- | --- |
+| `DATA_PATH` | Root directory for SQLite, uploads, and ChromaDB | `/app/data` |
+| `HF_HOME` | Hugging Face / Sentence Transformers cache directory | `/app/model-cache` |
+| `LLM_BASE_URL` | OpenAI-compatible chat-completions endpoint | `http://host.docker.internal:1234/v1/chat/completions` |
+| `NEXT_PUBLIC_API_URL` | Backend URL used by the browser frontend | `http://localhost:8000` |
+| `FRONTEND_ORIGIN` | CORS origin allowed by FastAPI | `http://localhost:3000` |
+
+There is currently no `.env.example` file; the Compose file is the source of the checked-in local defaults.
+
+## 💾 Data persistence
+
+Docker Compose uses two named volumes:
+
+| Volume | Stores |
+| --- | --- |
+| `backend-data` | SQLite database, ChromaDB files, and uploaded PDF data |
+| `model-cache` | Hugging Face and Sentence Transformers model files |
+
+The backend maps these locations to:
+
+```text
+/app/data
+/app/model-cache
+```
+
+This keeps application data and downloaded models available when containers are recreated.
+
+## 🛠️ Development
+
+### Backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend reads `NEXT_PUBLIC_API_URL` and falls back to `http://localhost:8000`.
+
+Available frontend scripts:
+
+```bash
+npm run build
+npm run start
+npm run lint
+```
+
+## 🗂️ Project structure
+
+```text
+study_planner/
+├── backend/
+│   ├── main.py                 # FastAPI routes and request models
+│   ├── ai.py                   # LLM prompts and generated study outputs
+│   ├── config.py               # Data paths and environment configuration
+│   ├── database.py             # SQLAlchemy models and SQLite session setup
+│   ├── requirements.txt
+│   └── scripts/
+│       ├── ingestion.py        # PDF extraction, chunking, embedding, indexing
+│       └── retrieval.py        # Chroma retrieval and reranking
+├── frontend/
+│   ├── src/app/                # Dashboard and study-tool pages
+│   ├── src/components/         # Shared UI components
+│   ├── src/lib/api.ts          # Axios API client
+│   ├── package.json
+│   └── Dockerfile
+├── data/                       # Local development data
+├── docker-compose.yml
+└── backend/Dockerfile
+```
+
+## 🔌 API surface
+
+| Functionality | Routes |
+| --- | --- |
+| Health | `GET /health` |
+| Topics | `GET /topics`, `POST /topics` |
+| Subtopics | `GET /subtopics/{topic_id}`, `POST /subtopics`, `DELETE /subtopics/{subtopic_id}` |
+| Material | `POST /upload`, `POST /uploadFolder` |
+| AI study tools | `POST /ask`, `POST /quiz`, `POST /flashcards` |
+| Schedule | `POST /schedule`, `GET /schedule`, `PATCH /schedule/{item_id}/complete` |
+
+## 🔭 Future work
+
+These are not currently implemented, but are natural next steps:
+
+- Add automated tests for ingestion, retrieval, API routes, and generated-output parsing.
+- Add authentication and user-specific data isolation.
+- Persist chat sessions, quiz attempts, and generated flashcard sets.
+- Model explicit prerequisites between topics.
+- Add learning-gap analysis based on quiz results and study history.
+- Add stronger file-upload validation and production deployment controls.
+
+## 📸 Screenshots
+
+Screenshots are not currently included in the repository. The most useful additions would be:
+
+1. Dashboard with prioritized topics and upcoming sessions.
+2. Upload page showing indexed PDF results.
+3. Chat page showing a retrieval-grounded answer.
+4. Quiz page showing generated questions and feedback.
+5. Flashcards or Schedule page showing the active learning workflow.
+
+---
+
+<div align="center">
+  Built as an AI/ML engineering project around personal study material, retrieval, and active recall.
+</div>
