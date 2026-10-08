@@ -1,0 +1,66 @@
+# Study Planner
+
+Study Planner is an AI-assisted learning workspace for organizing study topics, indexing personal PDF material, and generating retrieval-grounded explanations, quizzes, flashcards, and study schedules.
+
+## Overview
+
+Study Planner is designed for learners who want more than a conventional task or to-do list. Instead of only tracking study tasks, it connects a learner's topics and uploaded course material to an AI-assisted retrieval and generation pipeline.
+
+Users can:
+
+- Organize subjects into prioritized topics and subtopics.
+- Upload PDF study material.
+- Ask questions about indexed material.
+- Generate quizzes and flashcards for selected subtopics.
+- Generate a schedule based on topic priorities, available daily hours, and a date range.
+- Track completed schedule sessions.
+
+The application is currently designed as a local, single-user project. It uses a local OpenAI-compatible LLM endpoint, such as LM Studio, rather than depending on a hosted LLM API.
+
+## Features
+
+- Topic management with low, medium, and high priorities.
+- Manual subtopic creation, viewing, and deletion.
+- Uploading multiple PDF files or a folder of PDF files.
+- PDF text extraction with `pypdf`.
+- Duplicate document detection using SHA-256 file hashes.
+- Recursive text chunking with overlap before indexing.
+- Persistent ChromaDB storage for document chunks and embeddings.
+- Semantic document retrieval followed by cross-encoder reranking.
+- Retrieval-grounded question answering over selected study material.
+- LLM-generated multiple-choice quizzes with answers and explanations.
+- LLM-generated flashcards with question-and-answer navigation.
+- LLM-generated study schedules containing study, review, and quiz sessions.
+- Schedule persistence in SQLite.
+- Completion tracking for generated schedule items.
+- Docker Compose setup for the frontend and backend.
+
+## Architecture
+
+The project is split into a Next.js frontend and a FastAPI backend.
+
+The frontend communicates with the backend through REST endpoints. The backend manages application data with SQLAlchemy and SQLite, processes uploaded PDFs, performs retrieval from ChromaDB, and sends generation requests to an OpenAI-compatible local LLM endpoint.
+
+```mermaid
+flowchart TD
+    User[User] --> Frontend[Next.js Frontend]
+    Frontend --> API[FastAPI Backend]
+
+    API --> Topics[Topics and Schedule API]
+    API --> Ingestion[PDF Ingestion]
+    API --> AI[AI Generation Services]
+    API --> SQLite[(SQLite Database)]
+    API --> Chroma[(Persistent ChromaDB)]
+    API --> Files[Uploaded PDF Storage]
+
+    Ingestion --> Extract[PDF Text Extraction]
+    Extract --> Chunk[Recursive Text Chunking]
+    Chunk --> Embed[SentenceTransformer Embeddings]
+    Embed --> Chroma
+
+    AI --> Retrieve[Chroma Retrieval]
+    Retrieve --> Rerank[Cross-Encoder Reranking]
+    Rerank --> LLM[OpenAI-Compatible LLM Endpoint]
+
+    LLM --> API
+    API --> Frontend
